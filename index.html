@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1216">
+<title>Мой день</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#0f1216;--card:#171c22;--line:#252c34;--text:#e9edf2;--dim:#93a1b0;--ok:#3fb950;--warn:#d29922;--bad:#f85149;--accent:#4493f8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;padding-bottom:76px}
+header{padding:14px 16px 10px;position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);z-index:5}
+h1{margin:0;font-size:18px;font-weight:650}
+.sub{color:var(--dim);font-size:13px;margin-top:2px}
+section{padding:12px 16px;display:none}
+section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.row{display:flex;gap:10px;align-items:flex-start}
+.num{width:26px;height:26px;flex:0 0 26px;border-radius:50%;background:#222a33;color:var(--dim);display:grid;place-items:center;font-size:13px;font-weight:600}
+.num.cur{background:var(--accent);color:#fff}
+.num.done{background:var(--ok);color:#04140a}
+.t{font-weight:600}
+.meta{color:var(--dim);font-size:13px;margin-top:2px}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#222a33;color:var(--dim);margin-left:6px}
+button{font:inherit;border:0;border-radius:11px;padding:11px 14px;background:#222a33;color:var(--text)}
+button.primary{background:var(--accent);color:#fff;font-weight:600}
+button.ok{background:var(--ok);color:#04140a;font-weight:600}
+button.bad{background:#3a1d20;color:#ff9a94}
+button.wide{width:100%;margin-top:10px}
+label{display:block;font-size:13px;color:var(--dim);margin:12px 0 4px}
+input,select{width:100%;font:inherit;padding:11px;border-radius:11px;border:1px solid var(--line);background:#12171d;color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{padding:9px 12px;border-radius:10px;background:#12171d;border:1px solid var(--line);font-size:14px}
+.chip.sel{background:#1d2b3d;border-color:var(--accent)}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#12161b;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav a{flex:1;text-align:center;padding:10px 0 12px;color:var(--dim);text-decoration:none;font-size:12px}
+nav a.on{color:var(--accent)}
+nav a b{display:block;font-size:18px;font-weight:400}
+.hint{font-size:12.5px;color:var(--dim);margin-top:8px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+ul.tasks{list-style:none;padding:0;margin:0}
+ul.tasks li{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+ul.tasks li:last-child{border-bottom:0}
+ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
+.txt{flex:1}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="h-title">Мой день</h1>
+  <div class="sub" id="h-sub">–</div>
+</header>
+
+<section id="s-route" class="on"></section>
+
+<section id="s-report">
+  <div class="card">
+    <label>Магазин</label>
+    <select id="r-point"></select>
+    <label>Результат</label>
+    <div class="chips" id="r-result"></div>
+    <div id="r-km" style="display:none">
+      <label>Подарочные наборы</label>
+      <div class="chips" id="r-result2"></div>
+    </div>
+    <div id="r-shelves-wrap">
+      <label>Полок на КСО</label>
+      <input id="r-shelves" type="number" min="1" max="10" inputmode="numeric" placeholder="например 3">
+    </div>
+    <button class="primary wide" id="r-send">Отправить отчёт</button>
+    <div class="hint" id="r-status"></div>
+  </div>
+  <div class="card">
+    <div class="t">Кто отчитывается</div>
+    <label>ФИО МЧ</label>
+    <input id="p-name" autocomplete="name">
+    <label>ФИО СВ</label>
+    <input id="p-sv">
+    <div class="hint">Хранится только в этом телефоне, в коде приложения этих данных нет.</div>
+  </div>
+  <div class="card">
+    <div class="t">Что уйдёт в форму</div>
+    <div class="hint" id="r-preview"></div>
+  </div>
+</section>
+
+<section id="s-tasks">
+  <div class="card">
+    <div class="row" style="gap:8px">
+      <input id="t-new" placeholder="Что надо не забыть">
+      <button id="t-add">+</button>
+    </div>
+    <div class="hint">Задачи живут в этом телефоне, копятся по дням.</div>
+  </div>
+  <div class="card"><ul class="tasks" id="t-list"></ul></div>
+</section>
+
+<nav>
+  <a href="#" data-tab="route" class="on"><b>◉</b>Маршрут</a>
+  <a href="#" data-tab="report"><b>▤</b>Отчёт</a>
+  <a href="#" data-tab="tasks"><b>✓</b>Задачи</a>
+</nav>
+
+<script>
+const FORM_ID="1FAIpQLSfEcy6NYnVmjE1NCJzuAxqoP9SCWRHzPtIML1IfZlvGyBCu9Q";
+const E={name:"entry.1887951302",sv:"entry.1672473792",tim:"entry.1640848219",date:"entry.1670782349",
+         tt:"entry.2136880205",project:"entry.926667286",result:"entry.1945792798",shelves:"entry.539189160"};
+const RESULTS=["Выполнено","Не выполнено НТЗ","Не выполнено ЗАПРЕТ ДМ","Не выполнено Другое"];
+
+function prof(){try{return JSON.parse(localStorage.getItem("moi-prof")||"{}")}catch(e){return {}}}
+function saveProf(){localStorage.setItem("moi-prof",JSON.stringify({
+  name:document.getElementById("p-name").value.trim(),
+  sv:document.getElementById("p-sv").value.trim()}))}
+(function initProf(){
+  const p=prof();
+  const n=document.getElementById("p-name"),s=document.getElementById("p-sv");
+  n.value=p.name||"";s.value=p.sv||"";n.oninput=saveProf;s.oninput=saveProf;
+})();
+
+const SEED=[
+ {net:"Пятёрочка",addr:"Науки, 28к4",tt:"107048",kind:"none"},
+ {net:"Пятёрочка",addr:"Ковалевской, 3к1лА",tt:"142268",kind:"none"},
+ {net:"Пятёрочка",addr:"Ковалевской, 12к2",tt:"143301",kind:"none"},
+ {net:"Магнит ДК",addr:"Науки, 44",tt:"133420",kind:"dk"},
+ {net:"Магнит КМ",addr:"Науки, 44",tt:"106977",kind:"km"},
+ {net:"Пятёрочка",addr:"Науки, 44",tt:"146289",kind:"none"}
+];
+
+let state=load();
+function load(){
+  try{const raw=localStorage.getItem("moi-day");if(raw)return JSON.parse(raw)}catch(e){}
+  return {points:SEED.slice(),tasks:[],day:new Date().toISOString().slice(0,10)};
+}
+function save(){localStorage.setItem("moi-day",JSON.stringify(state))}
+function hm(d){return d.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})}
+
+document.querySelectorAll("nav a").forEach(a=>a.onclick=e=>{
+  e.preventDefault();
+  document.querySelectorAll("nav a").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll("section").forEach(x=>x.classList.remove("on"));
+  a.classList.add("on");document.getElementById("s-"+a.dataset.tab).classList.add("on");
+  if(a.dataset.tab==="report")fillReportSelect();
+});
+
+function renderRoute(){
+  const done=state.points.filter(p=>p.done).length;
+  document.getElementById("h-sub").textContent=`${hm(new Date())} · ${done} из ${state.points.length} точек закрыто`;
+  const wrap=document.getElementById("s-route");
+  wrap.innerHTML="";
+  state.points.forEach((p,idx)=>{
+    const cur=!p.done && state.points.findIndex(x=>!x.done)===idx;
+    const el=document.createElement("div");
+    el.className="card";
+    el.innerHTML=`<div class="row">
+      <div class="num ${p.done?"done":cur?"cur":""}">${p.done?"✓":idx+1}</div>
+      <div style="flex:1">
+        <div class="t">${p.net}${p.kind==="dk"?'<span class="tag">КСО</span>':p.kind==="km"?'<span class="tag">КМ</span>':''}</div>
+        <div class="meta">${p.addr} · код ${p.tt}</div>
+        <div class="row" style="gap:8px;margin-top:10px">
+          ${p.done?`<button data-undone="${idx}">вернуть</button>`:`<button class="ok" data-done="${idx}">Готова</button>`}
+          ${p.kind!=="none"&&p.done?`<button data-rep="${idx}">Отчёт</button>`:""}
+        </div>
+      </div></div>`;
+    wrap.appendChild(el);
+  });
+  wrap.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{
+    const p=state.points[+b.dataset.done];p.done=true;save();renderRoute();
+    if(p.kind!=="none"){fillReportSelect(+b.dataset.done);go("report")}
+  });
+  wrap.querySelectorAll("[data-undone]").forEach(b=>b.onclick=()=>{state.points[+b.dataset.undone].done=false;save();renderRoute()});
+  wrap.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{fillReportSelect(+b.dataset.rep);go("report")});
+}
+function go(tab){document.querySelector(`nav a[data-tab="${tab}"]`).click()}
+
+let selResult=null, selResult2=null;
+function fillReportSelect(pick){
+  const sel=document.getElementById("r-point");
+  sel.innerHTML=state.points.map((p,i)=>`<option value="${i}">${p.net} — ${p.addr}</option>`).join("");
+  if(pick!=null)sel.value=String(pick);
+  sel.onchange=()=>syncReport();
+  buildChips();
+  syncReport();
+}
+function buildChips(){
+  const mk=(host,set)=>{
+    host.innerHTML="";
+    RESULTS.forEach(r=>{
+      const c=document.createElement("div");
+      c.className="chip"+(set()===r?" sel":"");
+      c.textContent=r.replace("Не выполнено ","нет: ");
+      c.onclick=()=>{state["_"+host.id]=r;set(r);buildChips();syncReport()};
+      host.appendChild(c);
+    });
+  };
+  mk(document.getElementById("r-result"),r=>{if(r)selResult=r;return selResult});
+  mk(document.getElementById("r-result2"),r=>{if(r)selResult2=r;return selResult2});
+}
+function curPoint(){return state.points[+document.getElementById("r-point").value]}
+function syncReport(){
+  const p=curPoint();if(!p)return;
+  document.getElementById("r-km").style.display=p.kind==="km"?"block":"none";
+  document.getElementById("r-shelves-wrap").style.display=p.kind==="dk"?"block":"none";
+  const tim=p.kind==="dk"?"Магнит ММ  Выкладка на КСО":p.kind==="km"?"МК Платина-Золото-Серебро / МК Подарочные наборы":"—";
+  const pr=p.kind==="dk"?"Gillette OSA":p.kind==="km"?"Gillette":"—";
+  document.getElementById("r-preview").innerHTML=
+    `Код ТТ: <b>${p.tt}</b><br>Проект: <b>${pr}</b><br>ТИМ: <b>${tim}</b><br>Результат: <b>${selResult||"—"}</b>`+
+    (p.kind==="km"?`<br>Подарочные: <b>${selResult2||"—"}</b>`:"")+
+    (p.kind==="dk"?`<br>Полок: <b>${document.getElementById("r-shelves").value||"—"}</b>`:"");
+}
+document.getElementById("r-shelves").oninput=syncReport;
+
+async function postForm(data){
+  const body=new URLSearchParams(data).toString();
+  const r=await fetch(`https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`,{
+    method:"POST",mode:"no-cors",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body
+  });
+  return r; // opaque с no-cors: ошибки сети всплывут исключением
+}
+document.getElementById("r-send").onclick=async()=>{
+  const p=curPoint();const st=document.getElementById("r-status");
+  if(!p){st.textContent="Нет точки";return}
+  if(p.kind==="none"){st.innerHTML='<span class="warn">По этой сети отчёт в форму не отправляется</span>';return}
+  if(!selResult){st.innerHTML='<span class="warn">Выбери результат</span>';return}
+  const pf=prof();
+  if(!pf.name||!pf.sv){st.innerHTML='<span class="warn">Заполни ФИО МЧ и ФИО СВ ниже — без них форма не примет</span>';return}
+  const base={[E.name]:pf.name,[E.sv]:pf.sv,[E.tt]:p.tt,
+              [E.date]:new Date().toISOString().slice(0,10)};
+  const jobs=[];
+  if(p.kind==="dk"){
+    const sh=document.getElementById("r-shelves").value;
+    const d={...base,[E.tim]:"Магнит ММ  Выкладка на КСО",[E.project]:"Gillette OSA",[E.result]:selResult};
+    if(sh&&selResult==="Выполнено")d[E.shelves]=sh;
+    jobs.push(d);
+  }else{
+    jobs.push({...base,[E.tim]:"МК Платина-Золото-Серебро",[E.project]:"Gillette",[E.result]:selResult});
+    jobs.push({...base,[E.tim]:"МК Подарочные наборы",[E.project]:"Gillette",[E.result]:selResult2||selResult});
+  }
+  st.textContent="Отправляю…";
+  try{
+    for(const d of jobs)await postForm(d);
+    st.innerHTML=`<span class="ok">Отправлено: ${jobs.length} ${jobs.length===1?"отчёт":"отчёта"}. Проверь, что в форме появились строки за ${new Date().toLocaleDateString("ru-RU")}</span>`;
+    const log=JSON.parse(localStorage.getItem("moi-sent")||"[]");
+    log.push({at:new Date().toISOString(),tt:p.tt,addr:p.addr,jobs});localStorage.setItem("moi-sent",JSON.stringify(log));
+  }catch(e){
+    st.innerHTML=`<span class="bad">Не ушло: ${e.message}. Проверь интернет и попробуй ещё раз</span>`;
+  }
+};
+
+function renderTasks(){
+  const ul=document.getElementById("t-list");
+  ul.innerHTML=state.tasks.map((t,i)=>`<li class="${t.done?"checked":""}">
+    <button data-t="${i}" style="padding:6px 10px">${t.done?"✓":"○"}</button>
+    <span class="txt">${t.text}</span>
+    <button data-del="${i}" style="padding:6px 10px">✕</button></li>`).join("")||'<li class="hint">Пока пусто</li>';
+  ul.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{state.tasks[+b.dataset.t].done=!state.tasks[+b.dataset.t].done;save();renderTasks()});
+  ul.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{state.tasks.splice(+b.dataset.del,1);save();renderTasks()});
+}
+document.getElementById("t-add").onclick=()=>{
+  const v=document.getElementById("t-new").value.trim();if(!v)return;
+  state.tasks.push({text:v,done:false});document.getElementById("t-new").value="";save();renderTasks();
+};
+
+renderRoute();renderTasks();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
