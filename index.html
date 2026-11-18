@@ -174,6 +174,7 @@ const PRESETS={
  ]
 };
 function presetFor(date){return PRESETS[date]||null}
+const PRESET_VER="18-11-1";
 
 const SEED=[
  {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",inv:true,hours:"08:30–22:30",tim:"КСО"},
@@ -200,7 +201,22 @@ function load(){
   if(!s)s={days:{},tasks:[],active:todayISO,calY:new Date().getFullYear(),calM:new Date().getMonth()};
   if(!s.days[todayISO])s.days[todayISO]=(presetFor(todayISO)||SEED).map(p=>({...p,kind:kindOf(p.net),done:false}));
   if(!s.active)s.active=todayISO;
+  if(s.pVer!==PRESET_VER){
+    for(const d of Object.keys(PRESETS)) mergePreset(s,d);
+    s.pVer=PRESET_VER;
+    try{localStorage.setItem("moi-day2",JSON.stringify(s))}catch(e){}
+  }
   return s;
+}
+/* подтянуть маршрут ассистента, сохранив отметки «готова» и «инвент» */
+function mergePreset(s,date){
+  const pre=PRESETS[date]; if(!pre)return;
+  const cur=s.days[date]||[];
+  const byKey=new Map(cur.map(p=>[p.tt+"|"+p.proj,p]));
+  s.days[date]=pre.map(p=>{
+    const old=byKey.get(p.tt+"|"+p.proj);
+    return {...p,kind:kindOf(p.net),done:old?!!old.done:false,invDone:old?!!old.invDone:false};
+  });
 }
 function save(){localStorage.setItem("moi-day2",JSON.stringify(state))}
 function sentLog(){try{return JSON.parse(localStorage.getItem("moi-sent")||"[]")}catch(e){return []}}
@@ -222,7 +238,7 @@ document.querySelectorAll("nav a").forEach(a=>a.onclick=e=>{
 function renderRoute(){
   const list=pts(state.active), done=list.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · <b>${done} из ${list.length}</b> точек · отчётов: <b>${sentFor(state.active)}</b>`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · <b>${done} из ${list.length}</b> визитов · отчётов: <b>${sentFor(state.active)}</b>`;
   const wrap=document.getElementById("s-route");
   if(!list.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли мне выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
