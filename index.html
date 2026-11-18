@@ -48,6 +48,8 @@ ul.tasks li{display:flex;gap:10px;align-items:center;padding:10px 0;border-botto
 ul.tasks li:last-child{border-bottom:0}
 ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .txt{flex:1}
+.grip{flex:0 0 20px;width:20px;color:#5b6675;font-size:19px;line-height:1.1;text-align:center;padding-top:2px;touch-action:none;cursor:grab;user-select:none}
+.card.drag{border-color:var(--accent);opacity:.75}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
 .cal .wd{text-align:center;font-size:11px;color:var(--dim);padding:2px 0}
 .day{border-radius:11px;background:#12171d;border:1px solid var(--line);padding:6px 2px;text-align:center;min-height:58px;cursor:pointer}
@@ -239,13 +241,14 @@ function renderRoute(){
     };
   }
   list.forEach((p,idx)=>{
-    const el=document.createElement("div");el.className="card";
+    const el=document.createElement("div");el.className="card";el.dataset.idx=idx;
     const kindTag=p.kind==="dk"?'<span class="tag dk">КСО</span>':p.kind==="km"?'<span class="tag km">'+(p.tim||"КМ")+'</span>':'';
     el.innerHTML=`<div class="row">
+      <span class="grip" data-grip="${idx}" aria-label="перетащить">≡</span>
       <div class="num ${p.done?"done":(!p.done&&idx===curIdx)?"cur":""}">${p.done?"✓":idx+1}</div>
       <div style="flex:1">
         <div class="t">${p.net}${p.lvl&&p.lvl!=="—"?' · '+p.lvl:''}${kindTag}</div>
-        <div class="meta">${p.plan?'<b style="color:#8fc0ff">'+p.plan+'</b> · ':''}${p.addr} · код ${p.tt}</div>
+        <div class="meta">${p.addr}</div>
         <div class="meta">${p.proj||"—"}${p.hours&&p.hours!=="—"?" · "+p.hours:""}${p.note?" · "+p.note:""}</div>
         <div class="row" style="gap:8px;margin-top:10px">
           ${p.done?`<button class="small" data-undone="${idx}">вернуть</button>`:`<button class="ok small" data-done="${idx}">Готова</button>`}
@@ -257,6 +260,41 @@ function renderRoute(){
   wrap.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{pts(state.active)[+b.dataset.done].done=true;save();renderRoute()});
   wrap.querySelectorAll("[data-undone]").forEach(b=>b.onclick=()=>{pts(state.active)[+b.dataset.undone].done=false;save();renderRoute()});
   wrap.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{state.repIdx=+b.dataset.rep;save();go("report")});
+  wireDrag();
+}
+
+/* перетаскивание точек пальцем */
+let dragIdx=null;
+function wireDrag(){
+  document.querySelectorAll(".grip").forEach(g=>{
+    g.onpointerdown=e=>{
+      dragIdx=+g.dataset.grip;
+      const c=g.closest(".card");if(c)c.classList.add("drag");
+      document.addEventListener("pointermove",onDragMove);
+      document.addEventListener("pointerup",onDragEnd,{once:true});
+      document.addEventListener("pointercancel",onDragEnd,{once:true});
+      e.preventDefault();
+    };
+  });
+}
+function onDragMove(e){
+  if(dragIdx===null)return;
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const card=el&&el.closest?el.closest(".card[data-idx]"):null;
+  if(!card)return;
+  const to=+card.dataset.idx;
+  if(to===dragIdx)return;
+  const list=pts(state.active);
+  const [item]=list.splice(dragIdx,1);
+  list.splice(to,0,item);
+  dragIdx=to;save();renderRoute();
+  const nc=document.querySelector(`.card[data-idx="${to}"]`);
+  if(nc)nc.classList.add("drag");
+}
+function onDragEnd(){
+  dragIdx=null;
+  document.removeEventListener("pointermove",onDragMove);
+  document.querySelectorAll(".card.drag").forEach(c=>c.classList.remove("drag"));
 }
 function go(t){document.querySelector(`nav a[data-tab="${t}"]`).click()}
 
