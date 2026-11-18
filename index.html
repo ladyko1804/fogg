@@ -175,24 +175,24 @@ function humanDate(s){
 /* маршрут, собранный ассистентом: дата → точки по порядку с плановым временем */
 const PRESETS={
  "2026-11-18":[
-  {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"—",plan:"09:30"},
-  {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Oral Care OSA",hours:"08:00–23:00",tim:"—",plan:"10:45"},
-  {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",inv:true,hours:"08:30–22:30",tim:"КСО",plan:"11:20"},
-  {net:"Пятёрочка",lvl:"Медь",addr:"Пархоменко, 7",tt:"142653",proj:"Gillette",hours:"—",tim:"—",plan:"11:49"},
-  {net:"Магнит КМ",lvl:"Серебро",addr:"Науки, 15к1",tt:"106974",proj:"Gillette",hours:"10:00–22:00",tim:"КМ1",plan:"12:11"},
-  {net:"Магнит ДК",lvl:"Железо",addr:"Науки, 19к2литА",tt:"177198",proj:"Gillette OSA",hours:"08:00–22:30",tim:"КСО",plan:"12:52"},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО",plan:"13:24",note:"закрытая парковка"},
-  {net:"Магнит ДК",lvl:"Железо",addr:"Науки, 17к5",tt:"166733",proj:"Gillette OSA",hours:"08:39–22:30",tim:"КСО",plan:"13:50"},
-  {net:"Магнит ДК",lvl:"Железо",addr:"Обручевых, 5",tt:"163836",proj:"Gillette OSA",hours:"—",tim:"КСО",plan:"14:20",note:"часы уточнить"},
-  {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Gillette OSA",inv:true,hours:"круглосуточно",tim:"—",plan:"14:50"},
-  {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Oral Care OSA",hours:"круглосуточно",tim:"—",plan:"15:55"},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский, 75к7",tt:"107072",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО",plan:"16:22"},
-  {net:"Пятёрочка",lvl:"Серебро",addr:"Карпинского, 38к1",tt:"141417",proj:"Gillette",hours:"07:30–23:00",tim:"—",plan:"16:46"},
-  {net:"Пятёрочка",lvl:"Медь",addr:"Карпинского, 16",tt:"155954",proj:"Gillette",hours:"07:30–23:00",tim:"—",plan:"17:04"}
+  {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"—",t:75},
+  {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Oral Care OSA",hours:"08:00–23:00",tim:"—",t:26},
+  {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",inv:true,hours:"08:30–22:30",tim:"КСО",t:25},
+  {net:"Пятёрочка",lvl:"Медь",addr:"Пархоменко, 7",tt:"142653",proj:"Gillette",hours:"—",tim:"—",t:15},
+  {net:"Магнит КМ",lvl:"Серебро",addr:"Науки, 15к1",tt:"106974",proj:"Gillette",hours:"10:00–22:00",tim:"КМ1",t:39},
+  {net:"Магнит ДК",lvl:"Железо",addr:"Науки, 19к2литА",tt:"177198",proj:"Gillette OSA",hours:"08:00–22:30",tim:"КСО",t:26},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО",t:20,note:"закрытая парковка"},
+  {net:"Магнит ДК",lvl:"Железо",addr:"Науки, 17к5",tt:"166733",proj:"Gillette OSA",hours:"08:39–22:30",tim:"КСО",t:26},
+  {net:"Магнит ДК",lvl:"Железо",addr:"Обручевых, 5",tt:"163836",proj:"Gillette OSA",hours:"—",tim:"КСО",t:26,note:"часы уточнить"},
+  {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Gillette OSA",inv:true,hours:"круглосуточно",tim:"—",t:65},
+  {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Oral Care OSA",hours:"круглосуточно",tim:"—",t:24},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский, 75к7",tt:"107072",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО",t:20},
+  {net:"Пятёрочка",lvl:"Серебро",addr:"Карпинского, 38к1",tt:"141417",proj:"Gillette",hours:"07:30–23:00",tim:"—",t:15},
+  {net:"Пятёрочка",lvl:"Медь",addr:"Карпинского, 16",tt:"155954",proj:"Gillette",hours:"07:30–23:00",tim:"—",t:15}
  ]
 };
 function presetFor(date){return PRESETS[date]||null}
-const PRESET_VER="18-11-1";
+const PRESET_VER="18-11-2";
 
 const SEED=[
  {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",inv:true,hours:"08:30–22:30",tim:"КСО"},
@@ -266,102 +266,107 @@ document.querySelectorAll("nav a").forEach(a=>a.onclick=e=>{
 
 /* ---------- маршрут ---------- */
 function streetOf(a){return String(a||"").split(",")[0].trim()}
+function groupRows(list){
+  const map=new Map();
+  list.forEach((p,i)=>{const k=String(p.tt);if(!map.has(k))map.set(k,[]);map.get(k).push(i)});
+  return [...map.values()];
+}
+function gDone(rows){return rows.every(p=>p.done)}
+function gInv(rows){const w=rows.filter(p=>p.inv);return w.length?w.every(p=>p.invDone):null}
+function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.every(p=>p.timDone):null}
+function gPns(rows){const w=rows.filter(p=>p.kind==="km");return w.length?w.every(p=>p.pnDone):null}
+function gOral(rows){const w=rows.filter(p=>/oral/i.test(p.proj||""));return w.length?w.every(p=>p.oralDone):null}
+function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("Gillette OSA","Gillette OSA")}
 function renderRoute(){
-  const all=pts(state.active), done=all.filter(p=>p.done).length;
+  const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · <b>${done} из ${all.length}</b> визитов · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v13`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v14`;
   const wrap=document.getElementById("s-route");
-  if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли мне выгрузку — добавлю точки.</div></div>';return}
+  if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
-  const curIdx=all.findIndex(x=>!x.done);
-  const pre=presetFor(state.active);
-  if(pre){
-    const bar=document.createElement("div");bar.className="card";
-    bar.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
-      <div><div class="t">Маршрут от ассистента</div><div class="meta">нажми, чтобы выставить мой порядок</div></div>
-      <button class="primary small" id="apply-preset">Взять</button></div>`;
-    wrap.appendChild(bar);
-    bar.querySelector("#apply-preset").onclick=()=>{
-      if(!confirm("Заменить порядок точек на этот день?"))return;
-      state.days[state.active]=pre.map(x=>({...x,kind:kindOf(x.net),done:false}));
-      save();renderRoute();
-    };
-  }
+
   const f=state.filter=state.filter||{};
   const fbar=document.createElement("div");fbar.className="filters";
   fbar.innerHTML=`<span class="chip2 ${!f.lvl?"sel":""}" data-fl="">Все</span>`+
     ["Золото","Серебро","Медь","Железо"].map(l=>`<span class="chip2 ${f.lvl===l?"sel":""}" data-fl="${l}">${l}</span>`).join("")+
-    `<span class="chip2 ${f.inv?"sel":""}" data-fi="1">Инвент не сделан</span>`+
-    `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ не сделан</span>`;
+    `<span class="chip2 ${f.inv?"sel":""}" data-fi="1">Инвент</span>`+
+    `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ</span>`;
   wrap.appendChild(fbar);
   fbar.querySelectorAll("[data-fl]").forEach(c=>c.onclick=()=>{f.lvl=c.dataset.fl||null;save();renderRoute()});
   fbar.querySelectorAll("[data-fi]").forEach(c=>c.onclick=()=>{f.inv=!f.inv;save();renderRoute()});
   fbar.querySelectorAll("[data-ft]").forEach(c=>c.onclick=()=>{f.tim=!f.tim;save();renderRoute()});
 
-  let view=all.map((p,i)=>({p,i}));
-  if(f.lvl)view=view.filter(o=>o.p.lvl===f.lvl);
-  if(f.inv)view=view.filter(o=>o.p.inv&&!o.p.invDone);
-  if(f.tim)view=view.filter(o=>o.p.kind!=="none"&&!o.p.timDone);
-  if(!view.length){
-    const e=document.createElement("div");e.className="card";
-    e.innerHTML='<div class="hint">Под этот фильтр ничего нет</div>';wrap.appendChild(e);
-  }
+  let groups=groupRows(all).map(idxs=>({idxs,rows:idxs.map(i=>all[i])}));
+  if(f.lvl)groups=groups.filter(g=>g.rows.some(p=>p.lvl===f.lvl));
+  if(f.inv)groups=groups.filter(g=>{const w=g.rows.filter(p=>p.inv);return w.length&&!w.every(p=>p.invDone)});
+  if(f.tim)groups=groups.filter(g=>{const w=g.rows.filter(p=>p.kind!=="none");return w.length&&!w.every(p=>p.timDone)});
+  if(!groups.length){const e=document.createElement("div");e.className="card";e.innerHTML='<div class="hint">Под этот фильтр ничего нет</div>';wrap.appendChild(e)}
 
-  view.forEach((o,pos)=>{
-    const p=o.p, idx=o.i;
-    const running=p.start&&!p.end;
+  const curG=groups.findIndex(g=>!gDone(g.rows));
+  groups.forEach(({idxs,rows},pos)=>{
+    const p=rows[0];
+    const isDone=gDone(rows), running=rows.some(x=>x.start&&!x.end);
+    const total=(rows.reduce((a,x)=>a+(x.t||0),0))||null;
+    const projs=rows.map(x=>`${projShort(x.proj)}${x.t?` ${x.t} мин`:""}`).join(" · ");
     const el=document.createElement("div");
     el.className="card"+(running?" active":"");
-    el.dataset.idx=idx;
+    const inv=gInv(rows), tim=gTim(rows), pns=gPns(rows), oral=gOral(rows);
+    const timLabel=p.kind==="km"?("ТИМ "+(p.tim||"КМ")):"ТИМ КСО";
     el.innerHTML=`<div class="row">
-      <div class="num ${p.done?"done":(running?"run":(idx===curIdx?"cur":""))}">${p.done?"✓":pos+1}</div>
+      <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
         <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
-        <div class="meta">${p.proj||"—"}${p.note?" · "+p.note:""}</div>
+        <div class="meta">${projs}${rows.length>1&&total?` · всего ${total} мин`:""}${p.note?" · "+p.note:""}</div>
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
-          ${p.inv?`<button class="chk ${p.invDone?"on":""}" data-inv="${idx}">Инвент</button>`:""}
-          ${p.kind!=="none"?`<button class="chk ${p.timDone?"on":""}" data-tim="${idx}">ТИМ ${p.kind==="km"?(p.tim||"КМ"):"КСО"}</button>`:""}
-          ${p.kind==="km"?`<button class="chk ${p.pnDone?"on":""}" data-pn="${idx}">ПН</button>`:""}
+          ${inv!==null?`<button class="chk ${inv?"on":""}" data-inv="${idx0(idxs)}">Инвент</button>`:""}
+          ${tim!==null?`<button class="chk ${tim?"on":""}" data-tim="${idx0(idxs)}">${timLabel}</button>`:""}
+          ${pns!==null?`<button class="chk ${pns?"on":""}" data-pn="${idx0(idxs)}">ПН</button>`:""}
+          ${oral!==null?`<button class="chk ${oral?"on":""}" data-oral="${idx0(idxs)}">Oral</button>`:""}
         </div>
         <div class="chkline">
-          ${!p.start?`<button class="primary small" data-start="${idx}">Начало визита</button>`:""}
-          ${running?`<button class="ok small" data-end="${idx}">Закончила визит</button>`:""}
-          ${p.start&&p.end?`<button class="small" data-restart="${idx}">перезасечь</button><button class="small" data-undone="${idx}">вернуть в работу</button>`:""}
-          ${p.kind!=="none"?`<button class="small" data-rep="${idx}">Отчёт</button>`:""}
+          ${!p.start?`<button class="primary small" data-start="${idx0(idxs)}">Начало визита</button>`:""}
+          ${running?`<button class="ok small" data-end="${idx0(idxs)}">Закончила визит</button>`:""}
+          ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">перезасечь</button><button class="small" data-undone="${idx0(idxs)}">вернуть в работу</button>`:""}
+          ${rows.some(x=>x.kind!=="none")?`<button class="small" data-rep="${idx0(idxs)}">Отчёт</button>`:""}
         </div>
       </div>
       <div class="arrowbox">
-        <button class="small" data-up="${idx}" ${idx===0?"disabled style=opacity:.3":""}>↑</button>
-        <button class="small" data-down="${idx}" ${idx===all.length-1?"disabled style=opacity:.3":""}>↓</button>
+        <button class="small" data-up="${idx0(idxs)}" ${pos===0?"disabled style=opacity:.3":""}>↑</button>
+        <button class="small" data-down="${idx0(idxs)}" ${pos===groups.length-1?"disabled style=opacity:.3":""}>↓</button>
       </div>
     </div>`;
     wrap.appendChild(el);
   });
 
-  wrap.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{pts(state.active)[+b.dataset.done].done=true;save();renderRoute()});
-  wrap.querySelectorAll("[data-undone]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.undone];p.done=false;p.end=null;save();renderRoute()});
+  const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
+  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.inv);const v=!gRows(g).every(p=>p.invDone);gRows(g).forEach(p=>{if(p.inv)p.invDone=v});save();renderRoute()});
+  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.tim);const w=gRows(g).filter(p=>p.kind!=="none");const v=!w.every(p=>p.timDone);w.forEach(p=>p.timDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.start));g.forEach(p=>{p.start=new Date().toISOString();p.end=null});save();renderRoute()});
+  wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.end));const now=new Date().toISOString();g.forEach(p=>{p.end=now;p.done=true});save();renderRoute()});
+  wrap.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.restart));g.forEach(p=>{p.start=new Date().toISOString();p.end=null;p.done=false});save();renderRoute()});
+  wrap.querySelectorAll("[data-undone]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.undone));g.forEach(p=>{p.done=false;p.end=null});save();renderRoute()});
   wrap.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{state.repIdx=+b.dataset.rep;save();go("report")});
-  wrap.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>movePoint(+b.dataset.up,-1));
-  wrap.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>movePoint(+b.dataset.down,1));
-  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.inv];p.invDone=!p.invDone;save();renderRoute()});
-  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.tim];p.timDone=!p.timDone;save();renderRoute()});
-  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pn];p.pnDone=!p.pnDone;save();renderRoute()});
-  wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.start];p.start=new Date().toISOString();p.end=null;save();renderRoute()});
-  wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.end];p.end=new Date().toISOString();p.done=true;save();renderRoute()});
-  wrap.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.restart];p.start=new Date().toISOString();p.end=null;save();renderRoute()});
+  wrap.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>moveGroup(rowsOf(b.dataset.up).idxs,-1));
+  wrap.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>moveGroup(rowsOf(b.dataset.down).idxs,1));
 }
-function movePoint(idx,delta){
-  const list=pts(state.active);
-  const to=idx+delta;
-  if(to<0||to>=list.length)return;
-  const [item]=list.splice(idx,1);
-  list.splice(to,0,item);
+function idx0(idxs){return idxs[0]}
+function gRows(g){return g.rows}
+function moveGroup(idxs,dir){
+  const list=pts(state.active), set=new Set(idxs);
+  const block=list.filter((_,i)=>set.has(i));
+  const rest=list.filter((_,i)=>!set.has(i));
+  let pos;
+  if(dir<0){const prev=list[idxs[0]-1];pos=rest.indexOf(prev)}
+  else{const next=list[idxs[idxs.length-1]+1];pos=rest.indexOf(next);if(pos>=0)pos+=1}
+  if(pos<0)pos=dir<0?0:rest.length;
+  state.days[state.active]=rest.slice(0,pos).concat(block,rest.slice(pos));
   save();renderRoute();
-  const el=document.querySelector(`.card[data-idx="${to}"]`);
-  if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});
 }
+
 function go(t){document.querySelector(`nav a[data-tab="${t}"]`).click()}
 
 /* ---------- календарь ---------- */
