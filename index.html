@@ -56,6 +56,17 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .lvl.iron{color:#9fb6cc;border-color:#3b5064;background:#1c2630}
 .lvl.other{color:#93a1b0;border-color:#333c46}
 .addr{font-size:14px;color:#c3d0dd;margin-top:3px}
+.card.active{border-color:#7a3a44;background:#1d161a;box-shadow:inset 0 0 0 1px #53242c}
+.num.run{background:#8c3b46;color:#fff}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
+.filters::-webkit-scrollbar{display:none}
+.chip2{flex:0 0 auto;font-size:12.5px;padding:6px 10px;border-radius:999px;background:#12171d;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.chip2.sel{background:#1d2b3d;border-color:var(--accent);color:#dbe9ff}
+.chkline{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chk{font-size:12.5px;padding:6px 10px;border-radius:9px;background:#12171d;border:1px solid var(--line);color:#93a1b0}
+.chk.on{background:#17301f;border-color:#2c5c3a;color:#8fe0a8}
+.arrowbox{display:flex;flex-direction:column;gap:6px;margin-left:6px}
+.arrowbox button{padding:6px 9px;font-size:14px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
 .cal .wd{text-align:center;font-size:11px;color:var(--dim);padding:2px 0}
 .day{border-radius:11px;background:#12171d;border:1px solid var(--line);padding:6px 2px;text-align:center;min-height:58px;cursor:pointer}
@@ -253,67 +264,93 @@ document.querySelectorAll("nav a").forEach(a=>a.onclick=e=>{
 });
 
 /* ---------- маршрут ---------- */
+function streetOf(a){return String(a||"").split(",")[0].trim()}
 function renderRoute(){
-  const list=pts(state.active), done=list.filter(p=>p.done).length;
+  const all=pts(state.active), done=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · <b>${done} из ${list.length}</b> визитов · отчётов: <b>${sentFor(state.active)}</b> ${dayWorked(list)?` · в магазинах ${fmtDur(dayWorked(list))}`:""} · v10`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · <b>${done} из ${all.length}</b> визитов · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v11`;
   const wrap=document.getElementById("s-route");
-  if(!list.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли мне выгрузку — добавлю точки.</div></div>';return}
+  if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли мне выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
-  const curIdx=list.findIndex(x=>!x.done);
+  const curIdx=all.findIndex(x=>!x.done);
   const pre=presetFor(state.active);
   if(pre){
     const bar=document.createElement("div");bar.className="card";
     bar.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
-      <div><div class="t">Маршрут от ассистента</div><div class="meta">порядок с плановым временем</div></div>
+      <div><div class="t">Маршрут от ассистента</div><div class="meta">нажми, чтобы выставить мой порядок</div></div>
       <button class="primary small" id="apply-preset">Взять</button></div>`;
     wrap.appendChild(bar);
     bar.querySelector("#apply-preset").onclick=()=>{
       if(!confirm("Заменить порядок точек на этот день?"))return;
-      state.days[state.active]=pre.map(p=>({...p,kind:kindOf(p.net),done:false}));
+      state.days[state.active]=pre.map(x=>({...x,kind:kindOf(x.net),done:false}));
       save();renderRoute();
     };
   }
-  list.forEach((p,idx)=>{
-    const el=document.createElement("div");el.className="card";el.dataset.idx=idx;
-    const kindTag=p.kind==="dk"?'<span class="tag dk">КСО</span>':p.kind==="km"?'<span class="tag km">'+(p.tim||"КМ")+'</span>':'';
+  const f=state.filter=state.filter||{};
+  const fbar=document.createElement("div");fbar.className="filters";
+  fbar.innerHTML=`<span class="chip2 ${!f.lvl?"sel":""}" data-fl="">Все</span>`+
+    ["Золото","Серебро","Медь","Железо"].map(l=>`<span class="chip2 ${f.lvl===l?"sel":""}" data-fl="${l}">${l}</span>`).join("")+
+    `<span class="chip2 ${f.inv?"sel":""}" data-fi="1">Инвент не сделан</span>`+
+    `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ не сделан</span>`;
+  wrap.appendChild(fbar);
+  fbar.querySelectorAll("[data-fl]").forEach(c=>c.onclick=()=>{f.lvl=c.dataset.fl||null;save();renderRoute()});
+  fbar.querySelectorAll("[data-fi]").forEach(c=>c.onclick=()=>{f.inv=!f.inv;save();renderRoute()});
+  fbar.querySelectorAll("[data-ft]").forEach(c=>c.onclick=()=>{f.tim=!f.tim;save();renderRoute()});
+
+  let view=all.map((p,i)=>({p,i}));
+  if(f.lvl)view=view.filter(o=>o.p.lvl===f.lvl);
+  if(f.inv)view=view.filter(o=>o.p.inv&&!o.p.invDone);
+  if(f.tim)view=view.filter(o=>o.p.kind!=="none"&&!o.p.timDone);
+  if(!view.length){
+    const e=document.createElement("div");e.className="card";
+    e.innerHTML='<div class="hint">Под этот фильтр ничего нет</div>';wrap.appendChild(e);
+  }
+
+  view.forEach((o,pos)=>{
+    const p=o.p, idx=o.i;
+    const running=p.start&&!p.end;
+    const el=document.createElement("div");
+    el.className="card"+(running?" active":"");
+    el.dataset.idx=idx;
     el.innerHTML=`<div class="row">
-      <div class="num ${p.done?"done":(!p.done&&idx===curIdx)?"cur":""}">${p.done?"✓":idx+1}</div>
-      <div style="flex:1">
-        <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}${kindTag}</div>
+      <div class="num ${p.done?"done":(running?"run":(idx===curIdx?"cur":""))}">${p.done?"✓":pos+1}</div>
+      <div style="flex:1;min-width:0">
+        <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
         <div class="meta">${p.proj||"—"}${p.note?" · "+p.note:""}</div>
-        ${p.start?`<div class="meta" style="color:#9db4cc">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт"}</div>`:""}
-        <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">
-          <button class="small" data-up="${idx}" ${idx===0?"disabled style=opacity:.35":""}>↑</button>
-          <button class="small" data-down="${idx}" ${idx===list.length-1?"disabled style=opacity:.35":""}>↓</button>
+        ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
+        <div class="chkline">
+          ${p.inv?`<button class="chk ${p.invDone?"on":""}" data-inv="${idx}">Инвент</button>`:""}
+          ${p.kind!=="none"?`<button class="chk ${p.timDone?"on":""}" data-tim="${idx}">ТИМ ${p.kind==="km"?(p.tim||"КМ"):"КСО"}</button>`:""}
+          ${p.kind==="km"?`<button class="chk ${p.pnDone?"on":""}" data-pn="${idx}">ПН</button>`:""}
+        </div>
+        <div class="chkline">
+          ${!p.start?`<button class="primary small" data-start="${idx}">Начало визита</button>`:""}
+          ${running?`<button class="ok small" data-end="${idx}">Закончила</button>`:""}
+          ${p.start&&p.end?`<button class="small" data-restart="${idx}">перезасечь</button>`:""}
           ${p.done?`<button class="small" data-undone="${idx}">вернуть</button>`:`<button class="ok small" data-done="${idx}">Готова</button>`}
           ${p.kind!=="none"?`<button class="small" data-rep="${idx}">Отчёт</button>`:""}
-          ${p.inv?`<button class="${p.invDone?"ok":"small"}" data-inv="${idx}">Инвент ${p.invDone?"✓":"— нажать"}</button>`:""}
-          ${!p.start?`<button class="primary small" data-start="${idx}">Начало визита</button>`:""}
-          ${p.start&&!p.end?`<button class="ok small" data-end="${idx}">Закончила</button>`:""}
-          ${p.start&&p.end?`<button class="small" data-restart="${idx}">перезасечь</button>`:""}
         </div>
-      </div></div>`;
+      </div>
+      <div class="arrowbox">
+        <button class="small" data-up="${idx}" ${idx===0?"disabled style=opacity:.3":""}>↑</button>
+        <button class="small" data-down="${idx}" ${idx===all.length-1?"disabled style=opacity:.3":""}>↓</button>
+      </div>
+    </div>`;
     wrap.appendChild(el);
   });
+
   wrap.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{pts(state.active)[+b.dataset.done].done=true;save();renderRoute()});
   wrap.querySelectorAll("[data-undone]").forEach(b=>b.onclick=()=>{pts(state.active)[+b.dataset.undone].done=false;save();renderRoute()});
   wrap.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{state.repIdx=+b.dataset.rep;save();go("report")});
   wrap.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>movePoint(+b.dataset.up,-1));
   wrap.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>movePoint(+b.dataset.down,1));
-  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{
-    const p=pts(state.active)[+b.dataset.inv];p.invDone=!p.invDone;save();renderRoute();
-  });
-  wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{
-    const p=pts(state.active)[+b.dataset.start];p.start=new Date().toISOString();p.end=null;save();renderRoute();
-  });
-  wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{
-    const p=pts(state.active)[+b.dataset.end];p.end=new Date().toISOString();save();renderRoute();
-  });
-  wrap.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{
-    const p=pts(state.active)[+b.dataset.restart];p.start=new Date().toISOString();p.end=null;save();renderRoute();
-  });
+  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.inv];p.invDone=!p.invDone;save();renderRoute()});
+  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.tim];p.timDone=!p.timDone;save();renderRoute()});
+  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pn];p.pnDone=!p.pnDone;save();renderRoute()});
+  wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.start];p.start=new Date().toISOString();p.end=null;save();renderRoute()});
+  wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.end];p.end=new Date().toISOString();save();renderRoute()});
+  wrap.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.restart];p.start=new Date().toISOString();p.end=null;save();renderRoute()});
 }
 function movePoint(idx,delta){
   const list=pts(state.active);
