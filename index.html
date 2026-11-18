@@ -116,7 +116,8 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
       <label>Полок на КСО</label>
       <input id="r-shelves" type="number" min="1" max="10" inputmode="numeric" placeholder="например 3">
     </div>
-    <button class="primary wide" id="r-send">Отправить отчёт</button>
+    <button class="wide" id="r-send" disabled style="background:#242a31;color:#5d6673">Отправка из приложения отключена</button>
+    <div class="hint">Отчёты пока отправляю я в чате — так не будет случайных дублей. Включим, когда приложение проверим.</div>
     <div class="hint" id="r-status"></div>
   </div>
   <div class="card">
@@ -268,7 +269,7 @@ function streetOf(a){return String(a||"").split(",")[0].trim()}
 function renderRoute(){
   const all=pts(state.active), done=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · <b>${done} из ${all.length}</b> визитов · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v11`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · <b>${done} из ${all.length}</b> визитов · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v12`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли мне выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -444,7 +445,9 @@ async function postForm(data){
   });
 }
 document.getElementById("r-send").onclick=async()=>{
-  const p=curPoint(),st=document.getElementById("r-status");
+  const btn=document.getElementById("r-send"),st=document.getElementById("r-status");
+  if(btn.disabled){st.innerHTML='<span class="warn">Отправка из приложения выключена. Скажи мне в чате — отправлю сам</span>';return}
+  const p=curPoint();
   if(!p){st.innerHTML='<span class="warn">Нет магазина ДК/КМ на этот день</span>';return}
   if(!selResult){st.innerHTML='<span class="warn">Выбери результат</span>';return}
   const pf=prof();
