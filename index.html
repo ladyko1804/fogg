@@ -157,18 +157,18 @@ function humanDate(s){
 /* маршрут, собранный ассистентом: дата → точки по порядку с плановым временем */
 const PRESETS={
  "2026-11-18":[
-  {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Gillette OSA",hours:"08:00–23:00",tim:"—",plan:"09:30"},
+  {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"—",plan:"09:30"},
   {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Oral Care OSA",hours:"08:00–23:00",tim:"—",plan:"10:45"},
-  {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",hours:"08:30–22:30",tim:"КСО",plan:"11:20"},
+  {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",inv:true,hours:"08:30–22:30",tim:"КСО",plan:"11:20"},
   {net:"Пятёрочка",lvl:"Медь",addr:"Пархоменко, 7",tt:"142653",proj:"Gillette",hours:"—",tim:"—",plan:"11:49"},
   {net:"Магнит КМ",lvl:"Серебро",addr:"Науки, 15к1",tt:"106974",proj:"Gillette",hours:"10:00–22:00",tim:"КМ1",plan:"12:11"},
   {net:"Магнит ДК",lvl:"Железо",addr:"Науки, 19к2литА",tt:"177198",proj:"Gillette OSA",hours:"08:00–22:30",tim:"КСО",plan:"12:52"},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",hours:"08:00–23:00",tim:"КСО",plan:"13:24",note:"закрытая парковка"},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО",plan:"13:24",note:"закрытая парковка"},
   {net:"Магнит ДК",lvl:"Железо",addr:"Науки, 17к5",tt:"166733",proj:"Gillette OSA",hours:"08:39–22:30",tim:"КСО",plan:"13:50"},
   {net:"Магнит ДК",lvl:"Железо",addr:"Обручевых, 5",tt:"163836",proj:"Gillette OSA",hours:"—",tim:"КСО",plan:"14:20",note:"часы уточнить"},
-  {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Gillette OSA",hours:"круглосуточно",tim:"—",plan:"14:50"},
+  {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Gillette OSA",inv:true,hours:"круглосуточно",tim:"—",plan:"14:50"},
   {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Oral Care OSA",hours:"круглосуточно",tim:"—",plan:"15:55"},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский, 75к7",tt:"107072",proj:"Gillette OSA",hours:"08:00–23:00",tim:"КСО",plan:"16:22"},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский, 75к7",tt:"107072",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО",plan:"16:22"},
   {net:"Пятёрочка",lvl:"Серебро",addr:"Карпинского, 38к1",tt:"141417",proj:"Gillette",hours:"07:30–23:00",tim:"—",plan:"16:46"},
   {net:"Пятёрочка",lvl:"Медь",addr:"Карпинского, 16",tt:"155954",proj:"Gillette",hours:"07:30–23:00",tim:"—",plan:"17:04"}
  ]
@@ -176,12 +176,12 @@ const PRESETS={
 function presetFor(date){return PRESETS[date]||null}
 
 const SEED=[
- {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",hours:"08:30–22:30",tim:"КСО"},
- {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский, 75к7",tt:"107072",proj:"Gillette OSA",hours:"08:00–23:00",tim:"КСО"},
- {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",hours:"08:00–23:00",tim:"КСО",note:"закрытая парковка"},
- {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Gillette OSA",hours:"08:00–23:00",tim:"—"},
+ {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",inv:true,hours:"08:30–22:30",tim:"КСО"},
+ {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский, 75к7",tt:"107072",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО"},
+ {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"КСО",note:"закрытая парковка"},
+ {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Gillette OSA",inv:true,hours:"08:00–23:00",tim:"—"},
  {net:"Перекрёсток",lvl:"—",addr:"Культуры, 1",tt:"107044",proj:"Oral Care OSA",hours:"08:00–23:00",tim:"—"},
- {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Gillette OSA",hours:"круглосуточно",tim:"—"},
+ {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Gillette OSA",inv:true,hours:"круглосуточно",tim:"—"},
  {net:"Перекрёсток",lvl:"—",addr:"Науки, 23",tt:"107046",proj:"Oral Care OSA",hours:"круглосуточно",tim:"—"},
  {net:"Магнит КМ",lvl:"Серебро",addr:"Науки, 15к1",tt:"106974",proj:"Gillette",hours:"10:00–22:00",tim:"КМ1"},
  {net:"Магнит ДК",lvl:"Железо",addr:"Науки, 17к5",tt:"166733",proj:"Gillette OSA",hours:"08:39–22:30",tim:"КСО"},
@@ -247,13 +247,14 @@ function renderRoute(){
       <div class="num ${p.done?"done":(!p.done&&idx===curIdx)?"cur":""}">${p.done?"✓":idx+1}</div>
       <div style="flex:1">
         <div class="t">${p.net}<span class="code">${p.tt}</span>${kindTag}</div>
-        <div class="addr">${p.addr}</div>
-        <div class="meta">${p.proj||"—"}${p.hours&&p.hours!=="—"?" · "+p.hours:""}${p.note?" · "+p.note:""}</div>
+        <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
+        <div class="meta">${p.proj||"—"}${p.note?" · "+p.note:""}</div>
         <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">
           <button class="small" data-up="${idx}" ${idx===0?"disabled style=opacity:.35":""}>↑</button>
           <button class="small" data-down="${idx}" ${idx===list.length-1?"disabled style=opacity:.35":""}>↓</button>
           ${p.done?`<button class="small" data-undone="${idx}">вернуть</button>`:`<button class="ok small" data-done="${idx}">Готова</button>`}
           ${p.kind!=="none"?`<button class="small" data-rep="${idx}">Отчёт</button>`:""}
+          ${p.inv?`<button class="${p.invDone?"ok":"small"}" data-inv="${idx}">Инвент ${p.invDone?"✓":"— нажать"}</button>`:""}
         </div>
       </div></div>`;
     wrap.appendChild(el);
@@ -263,6 +264,9 @@ function renderRoute(){
   wrap.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{state.repIdx=+b.dataset.rep;save();go("report")});
   wrap.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>movePoint(+b.dataset.up,-1));
   wrap.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>movePoint(+b.dataset.down,1));
+  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{
+    const p=pts(state.active)[+b.dataset.inv];p.invDone=!p.invDone;save();renderRoute();
+  });
 }
 function movePoint(idx,delta){
   const list=pts(state.active);
