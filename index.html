@@ -94,9 +94,13 @@ header{position:relative}
 .ptime{font-size:12.5px;color:#8fc0ff}
 .shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
 .sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
+.small.trash{padding:2px 7px;font-size:13px}
 .small.del{background:#2a1416;border-color:#5a2a2f;color:#e08a86}
 .chk.no{background:#3a1d20;border-color:#6b2a2f;color:#ff9a94}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
+#addwrap{position:fixed;inset:0;background:#000b;z-index:88;display:none;align-items:center;justify-content:center;padding:16px}
+#addwrap.on{display:flex}
+#add-fields input{width:100%;margin:4px 0 8px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:9px;padding:9px;font-size:14px}
 #timwrap{position:fixed;inset:0;background:#000b;z-index:87;display:none;align-items:center;justify-content:center;padding:16px}
 #timwrap.on{display:flex}
 #invwrap{position:fixed;inset:0;background:#000b;z-index:86;display:none;align-items:center;justify-content:center;padding:16px}
@@ -130,6 +134,8 @@ document.getElementById("cmt-ok").onclick=saveCmt;
 document.getElementById("rpt-send").onclick=sendRpt;
 document.getElementById("inv-ok").onclick=saveInv;
 document.getElementById("tim-ok").onclick=saveTim;
+document.getElementById("add-ok").onclick=saveAdd;
+document.getElementById("add-cancel").onclick=()=>document.getElementById("addwrap").classList.remove("on");
 document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
 document.getElementById("inv-cancel").onclick=()=>document.getElementById("invwrap").classList.remove("on");
 document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwrap").classList.remove("on");
@@ -143,6 +149,25 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="sub" id="h-sub">—</div>
   <button id="btn-map" title="Карта точек">Карта</button>
 </header>
+
+<div id="addwrap">
+  <div class="cmtbox">
+    <div class="cmthead">Новая точка</div>
+    <div class="chips" id="add-kind"></div>
+    <div id="add-fields">
+      <label>Сеть или название</label><input id="add-net" placeholder="Магнит ДК / Аптека / Личное">
+      <label>Адрес</label><input id="add-addr" placeholder="улица, дом">
+      <div id="add-work" style="display:none">
+        <label>ID / код</label><input id="add-id" placeholder="glz_107999 или цифры">
+        <label>Проект</label><input id="add-proj" placeholder="Gillette OSA">
+        <label>Инвентаризация</label><div class="chips" id="add-inv"></div>
+        <label>IR</label><div class="chips" id="add-ir"></div>
+      </div>
+    </div>
+    <div class="cmtfoot"><button id="add-ok" class="primary small">Добавить</button><button id="add-cancel" class="small">Отмена</button></div>
+    <div class="hint" id="add-status"></div>
+  </div>
+</div>
 
 <div id="timwrap">
   <div class="cmtbox">
@@ -608,6 +633,63 @@ function saveCmt(){
   list.forEach(x=>{if(String(x.tt)===String(p.tt))x.comment=t||null});
   save(); document.getElementById("cmtwrap").classList.remove("on"); renderRoute();
 }
+
+let addKind=null, addInv=null, addIr=null;
+async function geocode(q){
+  try{
+    const u="https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q+", Санкт-Петербург");
+    const r=await fetch(u,{headers:{"Accept":"application/json"}});
+    const j=await r.json();
+    if(j&&j.length)return [+j[0].lat,+j[0].lon];
+  }catch(e){}
+  return [null,null];
+}
+function openAdd(){
+  addKind=null;addInv=null;addIr=null;
+  ["add-net","add-addr","add-id","add-proj"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("add-status").textContent="";
+  const kd=document.getElementById("add-kind");kd.innerHTML="";
+  [["work","Работа"],["private","Личное дело"]].forEach(([v,txt])=>{
+    const c=document.createElement("div");c.className="chip";c.textContent=txt;
+    c.onclick=()=>{addKind=v;[...kd.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
+      document.getElementById("add-work").style.display=(v==="work")?"block":"none"};
+    kd.appendChild(c);
+  });
+  [["add-inv",["надо","не надо"],x=>addInv=x],["add-ir",["надо","не надо"],x=>addIr=x]].forEach(([id,vals,set])=>{
+    const host=document.getElementById(id);host.innerHTML="";
+    vals.forEach(v=>{const c=document.createElement("div");c.className="chip";c.textContent=v;
+      c.onclick=()=>{set(v);[...host.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel")};host.appendChild(c)});
+  });
+  document.getElementById("add-work").style.display="none";
+  document.getElementById("addwrap").classList.add("on");
+}
+async function saveAdd(){
+  const st=document.getElementById("add-status");
+  const net=document.getElementById("add-net").value.trim();
+  const addr=document.getElementById("add-addr").value.trim();
+  if(!addKind){st.innerHTML='<span class="warn">Выбери: работа или личное</span>';return}
+  if(!net||!addr){st.innerHTML='<span class="warn">Нужны название и адрес</span>';return}
+  st.textContent="Ищу адрес на карте…";
+  const [la,lo]=await geocode(addr);
+  let tt,proj,tim,inv=false;
+  if(addKind==="private"){
+    tt="p"+Date.now().toString().slice(-6); proj="Личное дело"; tim="—";
+    if(!net)net="Личное";
+  }else{
+    const raw=document.getElementById("add-id").value.trim();
+    tt=raw.replace(/\D/g,"")||("n"+Date.now().toString().slice(-6));
+    proj=document.getElementById("add-proj").value.trim()||"Gillette OSA";
+    tim=/КМ/i.test(net)?"КМ1":(/ДК/i.test(net)?"КСО":"—");
+    inv=(addInv==="надо");
+  }
+  const row={net, lvl:"—", addr, tt, proj, hours:"—", tim, t:null, la:la, lo:lo};
+  if(inv)row.inv=true;
+  if(addIr==="надо")row.ir=true;
+  state.days[state.active]=pts(state.active).concat([{...row,kind:kindOf(net),done:false}]);
+  save();
+  document.getElementById("addwrap").classList.remove("on");
+  renderRoute();
+}
 function gotoCard(tt){
   document.getElementById("mapwrap").classList.remove("on");
   state.keepTt=String(tt);
@@ -645,7 +727,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v41`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v42`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -708,6 +790,7 @@ function renderRoute(){
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
             return `<button class="chk ${dn?"on":(mk?"no":"")}" data-tim="${idx0(idxs)}">${dn?timLabel+" ✓":(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
           ${tim===true?`<span class="shelves">полки: ${[1,2,3,4,5].map(n=>`<button class="sbtn ${(+rows[0].shelves===n)?"on":""}" data-shelf="${idx0(idxs)}|${n}">${n}</button>`).join("")}</span>`:""}
+          ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" data-ir="${idx0(idxs)}">IR</button>`:""}
           ${pns!==null?`<button class="chk ${pns?"on":""}" data-pn="${idx0(idxs)}">ПН</button>`:""}
           ${oral!==null?`<button class="chk ${oral?"on":""}" data-oral="${idx0(idxs)}">Oral</button>`:""}
         </div>
@@ -725,10 +808,11 @@ function renderRoute(){
             ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">ещё раз</button>`:""}`}
           <button class="small" data-cmt="${idx0(idxs)}">${rows[0].comment?"Комментарий ✓":"Комментарий"}</button>
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
-          <button class="small del" data-del="${idx0(idxs)}">Удалить</button>
+          <button class="small del" data-del="${idx0(idxs)}">Удалить точку</button>
         </div>
       </div>
       <div class="arrowbox">
+        <button class="small trash" data-void="${idx0(idxs)}" title="Удалить визит (обнулить)">🗑</button>
         <button class="small" data-up="${idx0(idxs)}" ${(pos===0||isDone||running)?"disabled style=opacity:.25":""}>↑</button>
         <button class="small" data-down="${idx0(idxs)}" ${(pos===groups.length-1||isDone||running)?"disabled style=opacity:.25":""}>↓</button>
       </div>
@@ -739,9 +823,10 @@ function renderRoute(){
   // итоги дня одним текстом — чтобы переслать ассистенту
   {
     const box=document.createElement("div");box.className="card";
-    box.innerHTML=`<div class="chkline"><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
+    box.innerHTML=`<div class="chkline"><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
     wrap.appendChild(box);
+    box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-copy").onclick=()=>{
       const t=dayText();
       const done=()=>{const h=document.getElementById("copy-hint");h.textContent="Скопировано. Вставь в чат со мной.";};
@@ -751,6 +836,14 @@ function renderRoute(){
   }
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
+  wrap.querySelectorAll("[data-void]").forEach(b=>b.onclick=()=>{
+    const g=rowsOf(b.dataset.void), nm=gRows(g)[0].net+" "+gRows(g)[0].addr;
+    if(!confirm("Точно удалить визит?\n"+nm+"\nМагазин останется, отметки и время обнулятся."))return;
+    gRows(g).forEach(x=>{x.done=false;x.start=null;x.end=null;x.invDone=null;x.invClosed=null;x.invReason=null;
+      x.timDone=null;x.timMarked=null;x.timReason=null;x.shelves=null;x.oralDone=null;x.oralMarked=null;
+      x.pnDone=null;x.pnMarked=null;x.sent=false});
+    save();renderRoute();
+  });
   wrap.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
     const g=rowsOf(b.dataset.del), tt=String(gRows(g)[0].tt);
     const nm=gRows(g)[0].net+" "+gRows(g)[0].addr;
@@ -763,6 +856,7 @@ function renderRoute(){
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
   wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;openTim(b.dataset.tim)});
+  wrap.querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.ir))[0].tt;const g=rowsOf(b.dataset.ir);const w=gRows(g).filter(x=>x.ir);const v=!w.every(x=>x.irDone);w.forEach(x=>x.irDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.pn))[0].tt;const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.oral))[0].tt;const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
@@ -931,6 +1025,8 @@ document.getElementById("cmt-ok").onclick=saveCmt;
 document.getElementById("rpt-send").onclick=sendRpt;
 document.getElementById("inv-ok").onclick=saveInv;
 document.getElementById("tim-ok").onclick=saveTim;
+document.getElementById("add-ok").onclick=saveAdd;
+document.getElementById("add-cancel").onclick=()=>document.getElementById("addwrap").classList.remove("on");
 document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
 document.getElementById("inv-cancel").onclick=()=>document.getElementById("invwrap").classList.remove("on");
 document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwrap").classList.remove("on");
