@@ -59,6 +59,7 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .card.moved{border-color:#2f6fbf;box-shadow:0 0 0 2px rgba(68,147,248,.35)}
 .card.active{border-color:#7a3a44;background:#1d161a;box-shadow:inset 0 0 0 1px #53242c}
 .num.run{background:#8c3b46;color:#fff}
+.cmttext{font-size:12px;color:#e8c07d;flex:1 1 55%;min-width:0;overflow-wrap:anywhere}
 .cmtbtn{font-size:15px;padding:3px 9px;line-height:1.2;color:#fff}
 .cmtbtn.has{background:#1f2937;border-color:#3b4b5f}
 .filters select{background:#12171d;color:#cfd8e3;border:1px solid var(--line);border-radius:9px;
@@ -801,7 +802,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v50`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v51`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -837,7 +838,6 @@ function renderRoute(){
         <div class="t">${netBadge(p.net)}${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
         <div class="meta">${[rows[0].shelves?"полок: "+rows[0].shelves:"",p.note||""].filter(Boolean).join(" · ")}</div>
-        ${rows[0].comment?`<div class="meta cmt">💬 ${esc(rows[0].comment)}</div>`:""}
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
@@ -861,7 +861,7 @@ function renderRoute(){
             <span class="pt">${p.t?p.t+" мин":""}</span>${!p.start?`<button class="primary small" data-start="${idx0(idxs)}">Начало визита</button>`:""}
             ${running?`<button class="ok small" data-end="${idx0(idxs)}">Закончила визит</button>`:""}
             ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">ещё раз</button>`:""}`}
-          <button class="small cmtbtn ${rows[0].comment?"has":""}" data-cmt="${idx0(idxs)}" title="Комментарий">${rows[0].comment?"💬✓":"💬"}</button>
+          <button class="small cmtbtn ${rows[0].comment?"has":""}" data-cmt="${idx0(idxs)}" title="Комментарий">${rows[0].comment?"💬✓":"💬"}</button>${rows[0].comment?`<span class="cmttext">${esc(rows[0].comment)}</span>`:""}
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         </div>
       </div>
