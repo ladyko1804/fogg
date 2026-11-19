@@ -908,7 +908,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v53`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v54`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -966,12 +966,12 @@ function renderRoute(){
               const t=x.start?`<span class="ptime">${fmtHM(x.start)}${x.end?"–"+fmtHM(x.end)+" · "+fmtDur(durMin(x.start,x.end)):" · идёт "+(x.start?fmtDur(durMin(x.start,new Date().toISOString())):"")}</span>`:"";
               const btn=!x.start?`<button class="primary small" data-pstart="${idxs[ix]}">${nm} — начать</button>`
                 :(!x.end?`<button class="ok small" data-pend="${idxs[ix]}">${nm} — закончила</button>`
-                :`<button class="small" data-pstart="${idxs[ix]}">${nm} — ещё раз</button>`);
+                :``);
               return `<div class="projline"><span class="pname">${nm}</span><span class="pt">${x.t?x.t+" мин":""}</span>${t}${btn}</div>`;
             }).join("")}`:`
             <span class="pt">${p.t?p.t+" мин":""}</span>${!p.start?`<button class="primary small" data-start="${idx0(idxs)}">Начало визита</button>`:""}
             ${running?`<button class="ok small" data-end="${idx0(idxs)}">Закончила визит</button>`:""}
-            ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">ещё раз</button>`:""}`}
+            `}
           <button class="small cmtbtn ${rows[0].comment?"has":""}" data-cmt="${idx0(idxs)}" title="Комментарий">${rows[0].comment?"💬✓":"💬"}</button>${rows[0].comment?`<span class="cmttext">${esc(rows[0].comment)}</span>`:""}
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         </div>
