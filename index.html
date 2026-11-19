@@ -91,6 +91,13 @@ header{position:relative}
 .shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
 .sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
+#cmtwrap{position:fixed;inset:0;background:#000b;z-index:80;display:none;align-items:center;justify-content:center;padding:16px}
+#cmtwrap.on{display:flex}
+.cmtbox{width:100%;max-width:520px;background:#141a21;border:1px solid var(--line);border-radius:14px;padding:14px}
+.cmthead{font-size:13.5px;color:#9fb0c4;margin-bottom:8px}
+#cmt-text{width:100%;min-height:120px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:10px;padding:10px;font:14px/1.45 system-ui;resize:vertical}
+.cmtfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.meta.cmt{color:#e8c07d;white-space:pre-wrap}
 .pin{width:28px;height:28px;border-radius:50%;background:#f1c40f;color:#241f10;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .pin.dn{background:#2e7d32}
 .pin.ph{background:#7b1fa2}
@@ -106,6 +113,8 @@ header{position:relative}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 document.getElementById("btn-map").onclick=openMap;
+document.getElementById("cmt-ok").onclick=saveCmt;
+document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
 document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
 </head>
@@ -115,6 +124,14 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="sub" id="h-sub">—</div>
   <button id="btn-map" title="Карта точек">Карта</button>
 </header>
+
+<div id="cmtwrap">
+  <div class="cmtbox">
+    <div class="cmthead">Комментарий · <span id="cmt-who"></span></div>
+    <textarea id="cmt-text" placeholder="Что случилось, что сделала, что не вышло…"></textarea>
+    <div class="cmtfoot"><button id="cmt-ok" class="primary small">Сохранить</button><button id="cmt-cancel" class="small">Отмена</button></div>
+  </div>
+</div>
 
 <div id="mapwrap">
   <div id="mapbar"><b>Точки на карте</b><button id="map-close">Закрыть</button></div>
@@ -348,6 +365,7 @@ function gInv(rows){const w=rows.filter(p=>p.inv);return w.length?w.every(p=>p.i
 function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.every(p=>p.timDone):null}
 function gPns(rows){const w=rows.filter(p=>p.kind==="km");return w.length?w.every(p=>p.pnDone):null}
 function gOral(rows){const w=rows.filter(p=>/oral/i.test(p.proj||""));return w.length?w.every(p=>p.oralDone):null}
+function esc(t){return String(t||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]))}
 function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("Gillette OSA","Gillette OSA")}
 
 function mapPoints(){
@@ -361,6 +379,44 @@ function mapPoints(){
   return out;
 }
 let mapObj=null;
+
+let cmtIdx=null;
+function dayText(){
+  const all=pts(state.active), seen=new Set(), out=[];
+  out.push("Итоги "+state.active);
+  all.forEach(p=>{
+    const k=String(p.tt); if(seen.has(k))return; seen.add(k);
+    const rows=all.filter(x=>String(x.tt)===k);
+    const bits=[];
+    bits.push((p.net||"")+" "+p.addr+" ("+p.tt+")");
+    const tim=rows.filter(x=>x.kind!=="none");
+    if(tim.length)bits.push("ТИМ: "+(tim.every(x=>x.timDone)?"да":"нет")+(rows[0].shelves?" полок "+rows[0].shelves:""));
+    const inv=rows.filter(x=>x.inv);
+    if(inv.length)bits.push("Инвент: "+(inv.every(x=>x.invDone)?"да":"нет"));
+    const oral=rows.filter(x=>/oral/i.test(x.proj||""));
+    if(oral.length)bits.push("Oral: "+(oral.every(x=>x.oralDone)?"да":"нет"));
+    const pn=rows.filter(x=>x.kind==="km");
+    if(pn.length)bits.push("ПН: "+(pn.every(x=>x.pnDone)?"да":"нет"));
+    if(rows.some(x=>x.done))bits.push("визит закрыт");
+    if(rows[0].comment)bits.push("коммент: "+rows[0].comment);
+    out.push("— "+bits.join(" · "));
+  });
+  return out.join("\n");
+}
+function openCmt(i){
+  cmtIdx=+i;
+  const p=pts(state.active)[cmtIdx];
+  document.getElementById("cmt-who").textContent=(p.net||"")+" · "+p.addr+" · "+p.tt;
+  document.getElementById("cmt-text").value=p.comment||"";
+  document.getElementById("cmtwrap").classList.add("on");
+  setTimeout(()=>document.getElementById("cmt-text").focus(),60);
+}
+function saveCmt(){
+  const t=document.getElementById("cmt-text").value.trim();
+  const list=pts(state.active); const p=list[cmtIdx]; if(!p)return;
+  list.forEach(x=>{if(String(x.tt)===String(p.tt))x.comment=t||null});
+  save(); document.getElementById("cmtwrap").classList.remove("on"); renderRoute();
+}
 function openMap(){
   if(typeof L==="undefined"){alert("Карта не загрузилась — нужен интернет");return}
   document.getElementById("mapwrap").classList.add("on");
@@ -388,7 +444,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v29`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v31`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -441,6 +497,7 @@ function renderRoute(){
         <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}${f.time&&!isDone?`${closeInfo(p.hours)?` <span class="${closeInfo(p.hours).closed?"bad":"warn"}" style="font-size:12.5px">${closeInfo(p.hours).label}</span>`:""}`:""}</div>
         <div class="meta">${projs}${rows.length>1&&total?` · всего ${total} мин`:""}${rows[0].shelves?" · полок: "+rows[0].shelves:""}${p.note?" · "+p.note:""}</div>
+        ${rows[0].comment?`<div class="meta cmt">💬 ${esc(rows[0].comment)}</div>`:""}
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
           ${inv!==null?`<button class="chk ${inv?"on":""}" data-inv="${idx0(idxs)}">Инвент</button>`:""}
@@ -454,6 +511,7 @@ function renderRoute(){
           ${running?`<button class="ok small" data-end="${idx0(idxs)}">Закончила визит</button>`:""}
           ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">перезасечь</button><button class="small" data-undone="${idx0(idxs)}">вернуть в работу</button>`:""}
           ${rows.some(x=>x.kind!=="none")?`<button class="small" data-rep="${idx0(idxs)}">Отчёт</button>`:""}
+          <button class="small" data-cmt="${idx0(idxs)}">${rows[0].comment?"Комментарий ✓":"Комментарий"}</button>
         </div>
       </div>
       <div class="arrowbox">
@@ -464,7 +522,22 @@ function renderRoute(){
     wrap.appendChild(el);
   });
 
+  // итоги дня одним текстом — чтобы переслать ассистенту
+  {
+    const box=document.createElement("div");box.className="card";
+    box.innerHTML=`<div class="chkline"><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
+      <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
+    wrap.appendChild(box);
+    box.querySelector("#btn-copy").onclick=()=>{
+      const t=dayText();
+      const done=()=>{const h=document.getElementById("copy-hint");h.textContent="Скопировано. Вставь в чат со мной.";};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>{prompt("Скопируй:",t)})}
+      else prompt("Скопируй:",t);
+    };
+  }
+
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
+  wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.inv);const v=!gRows(g).every(p=>p.invDone);gRows(g).forEach(p=>{if(p.inv)p.invDone=v});save();renderRoute()});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
   wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.tim);const w=gRows(g).filter(p=>p.kind!=="none");const v=!w.every(p=>p.timDone);w.forEach(p=>p.timDone=v);save();renderRoute()});
@@ -630,6 +703,8 @@ renderRoute();renderTasks();renderCal();fillReport();
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
 
 document.getElementById("btn-map").onclick=openMap;
+document.getElementById("cmt-ok").onclick=saveCmt;
+document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
 document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
 </body>
