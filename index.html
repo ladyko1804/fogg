@@ -97,6 +97,8 @@ header{position:relative}
 .small.del{background:#2a1416;border-color:#5a2a2f;color:#e08a86}
 .chk.no{background:#3a1d20;border-color:#6b2a2f;color:#ff9a94}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
+#timwrap{position:fixed;inset:0;background:#000b;z-index:87;display:none;align-items:center;justify-content:center;padding:16px}
+#timwrap.on{display:flex}
 #invwrap{position:fixed;inset:0;background:#000b;z-index:86;display:none;align-items:center;justify-content:center;padding:16px}
 #invwrap.on{display:flex}
 #rptwrap{position:fixed;inset:0;background:#000b;z-index:85;display:none;align-items:center;justify-content:center;padding:16px}
@@ -127,6 +129,8 @@ document.getElementById("btn-map").onclick=openMap;
 document.getElementById("cmt-ok").onclick=saveCmt;
 document.getElementById("rpt-send").onclick=sendRpt;
 document.getElementById("inv-ok").onclick=saveInv;
+document.getElementById("tim-ok").onclick=saveTim;
+document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
 document.getElementById("inv-cancel").onclick=()=>document.getElementById("invwrap").classList.remove("on");
 document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwrap").classList.remove("on");
 document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
@@ -139,6 +143,17 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="sub" id="h-sub">—</div>
   <button id="btn-map" title="Карта точек">Карта</button>
 </header>
+
+<div id="timwrap">
+  <div class="cmtbox">
+    <div class="cmthead">ТИМ · <span id="tim-who"></span></div>
+    <div class="chips" id="tim-choice"></div>
+    <div id="tim-sh" style="display:none"><label>Сколько доп. полок?</label><div class="chips" id="tim-shelves"></div></div>
+    <div id="tim-why" style="display:none"><label>Почему не сделано?</label><div class="chips" id="tim-reasons"></div>
+      <input id="tim-other" placeholder="своя причина" style="margin-top:8px;display:none"></div>
+    <div class="cmtfoot"><button id="tim-ok" class="primary small">Сохранить</button><button id="tim-cancel" class="small">Отмена</button></div>
+  </div>
+</div>
 
 <div id="invwrap">
   <div class="cmtbox">
@@ -421,6 +436,44 @@ let mapObj=null;
 
 
 const INV_REASONS=["Запрет директора","Нет КСО / оборудования","Нет места","Нет товара","Другое"];
+
+const TIM_REASONS=["Запрет директора","Нет оборудования на КСО","Нет места","НТЗ","Другое"];
+let timIdx=null,timChoice=null,timReason=null,timShelves=null;
+function openTim(i){
+  timIdx=+i; const p=pts(state.active)[timIdx];
+  document.getElementById("tim-who").textContent=(p.net||"")+" · "+p.addr;
+  timChoice=null;timReason=null;timShelves=null;
+  const ch=document.getElementById("tim-choice");ch.innerHTML="";
+  [["done","Да, сделано"],["no","Нет, не сделано"]].forEach(([v,txt])=>{
+    const c=document.createElement("div");c.className="chip";c.textContent=txt;
+    c.onclick=()=>{timChoice=v;[...ch.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
+      document.getElementById("tim-sh").style.display=(v==="done")?"block":"none";
+      document.getElementById("tim-why").style.display=(v==="no")?"block":"none";};
+    ch.appendChild(c);
+  });
+  const sh=document.getElementById("tim-shelves");sh.innerHTML="";
+  [1,2,3,4,5].forEach(n=>{const c=document.createElement("div");c.className="chip";c.textContent=n;
+    c.onclick=()=>{timShelves=n;[...sh.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel")};sh.appendChild(c)});
+  const rs=document.getElementById("tim-reasons");rs.innerHTML="";
+  TIM_REASONS.forEach(r=>{const c=document.createElement("div");c.className="chip";c.textContent=r;
+    c.onclick=()=>{timReason=r;[...rs.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
+      document.getElementById("tim-other").style.display=(r==="Другое")?"block":"none"};rs.appendChild(c)});
+  document.getElementById("tim-other").value="";document.getElementById("tim-other").style.display="none";
+  document.getElementById("tim-sh").style.display="none";document.getElementById("tim-why").style.display="none";
+  document.getElementById("timwrap").classList.add("on");
+}
+function saveTim(){
+  const p=pts(state.active)[timIdx];
+  if(!timChoice){alert("Выбери: сделано или нет");return}
+  if(timChoice==="no"&&!timReason){alert("Выбери причину");return}
+  let why=timReason;
+  if(timChoice==="no"&&timReason==="Другое"){const t=document.getElementById("tim-other").value.trim();if(t)why=t;}
+  pts(state.active).forEach(x=>{ if(String(x.tt)===String(p.tt)&&x.kind!=="none"){
+    x.timMarked=true; x.timDone=(timChoice==="done"); x.timReason=(timChoice==="no"?why:null);
+    if(timChoice==="done"&&timShelves)x.shelves=timShelves;
+  }});
+  save(); document.getElementById("timwrap").classList.remove("on"); renderRoute();
+}
 let invIdx=null,invChoice=null,invReason=null;
 function openInv(i){
   invIdx=+i; const p=pts(state.active)[invIdx];
@@ -509,26 +562,38 @@ async function sendRpt(){
 let cmtIdx=null;
 function dayText(){
   const all=pts(state.active), seen=new Set(), out=[];
+  const cnt={visits:0,done:0,timYes:0,timNo:0};
   out.push("Итоги "+state.active);
   all.forEach(p=>{
     const k=String(p.tt); if(seen.has(k))return; seen.add(k);
     const rows=all.filter(x=>String(x.tt)===k);
     const bits=[];
     bits.push((p.net||"")+" "+p.addr+" ("+p.tt+")");
+    const isDone=rows.every(x=>x.done);
+    cnt.visits++; if(isDone)cnt.done++;
+    bits.push(isDone?"ВИЗИТ ВЫПОЛНЕН":"ВИЗИТ НЕ ВЫПОЛНЕН");
     const tim=rows.filter(x=>x.kind!=="none");
-    if(tim.length)bits.push("ТИМ: "+(tim.every(x=>x.timDone)?"да":"нет")+(rows[0].shelves?" полок "+rows[0].shelves:""));
+    if(tim.length){
+      const t=rows.find(x=>x.timDone), anyT=tim.some(x=>x.timDone), noted=tim.some(x=>x.timDone)||tim.some(x=>x.timDone===false&&x.timMarked);
+      if(anyT){cnt.timYes++;bits.push("ТИМ: да"+(rows[0].shelves?" · полок "+rows[0].shelves:""));}
+      else if(noted){cnt.timNo++;bits.push("ТИМ: нет"+(rows[0].timReason?" — "+rows[0].timReason:""));}
+      else bits.push("ТИМ: не отмечено");
+    }
     const inv=rows.filter(x=>x.inv);
-    if(inv.length){const cl=inv.every(x=>x.invClosed),dn=inv.every(x=>x.invDone);bits.push("Инвент: "+(dn&&cl?"да":(cl?"нет — "+(inv[0].invReason||"без причины"):"не отмечено")));}
+    if(inv.length){const cl=inv.every(x=>x.invClosed),dn=inv.every(x=>x.invDone);
+      bits.push("Инвент: "+(dn&&cl?"да":(cl?"нет — "+(inv[0].invReason||"без причины"):"не отмечено")));}
     const oral=rows.filter(x=>/oral/i.test(x.proj||""));
-    if(oral.length)bits.push("Oral: "+(oral.every(x=>x.oralDone)?"да":"нет"));
+    if(oral.length)bits.push("Oral: "+(!oral.some(x=>x.oralDone)&&!oral.some(x=>x.oralMarked)?(oral.some(x=>x.done)?"нет":"не отмечено"):(oral.every(x=>x.oralDone)?"да":"нет")));
     const pn=rows.filter(x=>x.kind==="km");
-    if(pn.length)bits.push("ПН: "+(pn.every(x=>x.pnDone)?"да":"нет"));
-    if(rows.some(x=>x.done))bits.push("визит закрыт");
+    if(pn.length)bits.push("ПН: "+(!pn.some(x=>x.pnDone)&&!pn.some(x=>x.pnMarked)?"не отмечено":(pn.every(x=>x.pnDone)?"да":"нет")));
     if(rows[0].comment)bits.push("коммент: "+rows[0].comment);
     out.push("— "+bits.join(" · "));
   });
+  out.push("");
+  out.push("Всего точек: "+cnt.visits+", визитов выполнено: "+cnt.done+", ТИМ сделан: "+cnt.timYes+", ТИМ нет: "+cnt.timNo);
   return out.join("\n");
 }
+
 function openCmt(i){
   cmtIdx=+i;
   const p=pts(state.active)[cmtIdx];
@@ -580,7 +645,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v39`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v41`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -640,7 +705,8 @@ function renderRoute(){
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
             return `<button class="chk ${dn?"on":(cl?"no":"")}" data-inv="${idx0(idxs)}">${dn?"Инвент ✓":(cl?"Инвент: нет":"Инвент")}</button>`;})():""}
-          ${tim!==null?`<button class="chk ${tim?"on":""}" data-tim="${idx0(idxs)}">${timLabel}</button>`:""}
+          ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
+            return `<button class="chk ${dn?"on":(mk?"no":"")}" data-tim="${idx0(idxs)}">${dn?timLabel+" ✓":(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
           ${tim===true?`<span class="shelves">полки: ${[1,2,3,4,5].map(n=>`<button class="sbtn ${(+rows[0].shelves===n)?"on":""}" data-shelf="${idx0(idxs)}|${n}">${n}</button>`).join("")}</span>`:""}
           ${pns!==null?`<button class="chk ${pns?"on":""}" data-pn="${idx0(idxs)}">ПН</button>`:""}
           ${oral!==null?`<button class="chk ${oral?"on":""}" data-oral="${idx0(idxs)}">Oral</button>`:""}
@@ -696,7 +762,7 @@ function renderRoute(){
   wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
-  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;const g=rowsOf(b.dataset.tim);const w=gRows(g).filter(p=>p.kind!=="none");const v=!w.every(p=>p.timDone);w.forEach(p=>p.timDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;openTim(b.dataset.tim)});
   wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.pn))[0].tt;const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.oral))[0].tt;const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
@@ -864,6 +930,8 @@ document.getElementById("btn-map").onclick=openMap;
 document.getElementById("cmt-ok").onclick=saveCmt;
 document.getElementById("rpt-send").onclick=sendRpt;
 document.getElementById("inv-ok").onclick=saveInv;
+document.getElementById("tim-ok").onclick=saveTim;
+document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
 document.getElementById("inv-cancel").onclick=()=>document.getElementById("invwrap").classList.remove("on");
 document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwrap").classList.remove("on");
 document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
