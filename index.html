@@ -81,13 +81,36 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .calhead .mname{font-weight:600}
 .calhead button{padding:6px 12px}
+)
+#btn-map{position:absolute;right:12px;top:12px;font-size:13px;padding:7px 12px;border-radius:10px;background:#1d2b3d;border:1px solid var(--line);color:#cfe3ff}
+header{position:relative}
+#mapwrap{position:fixed;inset:0;background:#0b0f14;z-index:70;display:none;flex-direction:column}
+#mapwrap.on{display:flex}
+#mapbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
+#map{flex:1;min-height:0}
+.pin{width:28px;height:28px;border-radius:50%;background:#c0392b;color:#fff;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
+.pin.dn{background:#2e7d32}
+.pin.ph{background:#7b1fa2}
+.leaflet-popup-content{font-size:13px;line-height:1.45}
+.leaflet-popup-content a{color:#32506f}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+document.getElementById("btn-map").onclick=openMap;
+document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
+</script>
 </head>
 <body>
 <header>
   <h1 id="h-title">Мой день</h1>
   <div class="sub" id="h-sub">—</div>
+  <button id="btn-map" title="Карта точек">Карта</button>
 </header>
+
+<div id="mapwrap">
+  <div id="mapbar"><b>Точки на карте</b><button id="map-close">Закрыть</button></div>
+  <div id="map"></div>
+</div>
 
 <section id="s-route" class="on"></section>
 
@@ -176,32 +199,33 @@ function humanDate(s){
 /* маршрут, собранный ассистентом: дата → точки по порядку с плановым временем */
 const PRESETS={
  "2026-11-19":[
-  {net:"Пятёрочка",lvl:"Серебро",addr:"Карпинского 38к1",tt:"141417",proj:"Gillette",hours:"—",tim:"—",t:15},
-  {net:"Магнит ДК",lvl:"Железо",addr:"пр. Науки 19к2литА",tt:"177198",proj:"Gillette OSA",hours:"08:00 – 22:30",tim:"КСО",t:26,note:"Дир машет контрактом, запрет ТИМ."},
-  {net:"Магнит ДК",lvl:"Медь",addr:"пр. Науки 17к5лит3",tt:"166733",proj:"Gillette OSA",hours:"08:39 – 22:30",tim:"КСО",t:26},
-  {net:"Магнит ДК",lvl:"Железо",addr:"пр. Науки 24к1",tt:"123457954",proj:"Gillette OSA",hours:"09:00 – 22:00",tim:"КСО",t:26,note:"Не было полок с одноразкой."},
-  {net:"Дикси",lvl:"Медь",addr:"пр. Науки 25",tt:"107043",proj:"Gillette OSA",hours:"09:00 – 23:00",tim:"—",t:24},
-  {net:"Дикси",lvl:"Серебро",addr:"пр. Науки 55",tt:"107038",proj:"Gillette OSA",hours:"Круглосуточно",tim:"—",t:24},
-  {net:"Магнит ДК",lvl:"Медь",addr:"Пискарёвский 165к1",tt:"107060",proj:"Gillette OSA",inv:true,hours:"08:30 – 22:30",tim:"КСО",t:20},
-  {net:"Магнит ДК",lvl:"Серебро",addr:"ул. Верности 9",tt:"107065",proj:"Gillette OSA",hours:"08:00 – 22:00",tim:"КСО",t:20,note:"Ценники: моментальная, мобайл 2."},
-  {net:"Магнит ДК",lvl:"Серебро",addr:"ул. Верности 9",tt:"107065",proj:"Oral Care OSA",hours:"08:00 – 22:00",tim:"КСО",t:7,note:"Ценники: моментальная, мобайл 2."},
-  {net:"Магнит ДК",lvl:"Медь",addr:"ул. Обручевых 5",tt:"163836",proj:"Gillette OSA",hours:"(уточнить)",tim:"КСО",t:26},
-  {net:"Пятёрочка",lvl:"Медь",addr:"Карпинского 16",tt:"155954",proj:"Gillette",hours:"—",tim:"—",t:15},
-  {net:"Магнит КМ",lvl:"Серебро",addr:"Гражданский 23к1",tt:"106975",proj:"Gillette",hours:"10:00 – 22:00",tim:"КМ1",t:39,note:"Дир Людмила Александровна."},
-  {net:"Магнит КМ",lvl:"Серебро",addr:"Гражданский 23к1",tt:"106975",proj:"Oral Care",hours:"10:00 – 22:00",tim:"КМ1",t:17,note:"Дир Людмила Александровна."},
-  {net:"Магнит ДК",lvl:"Железо",addr:"Пискарёвский 145к6",tt:"163719",proj:"Gillette OSA",hours:"10:00 – 22:00",tim:"КСО",t:26,note:"2 КСО, но оборудование на 1 КСО."},
-  {net:"Магнит ДК",lvl:"Медь",addr:"Гражданский 23к1",tt:"107052",proj:"Gillette OSA",inv:true,hours:"Круглосуточно",tim:"КСО",t:20,note:"Дир до 17:00. Товар в закрытом кабинете."},
-  {net:"Магнит ДК",lvl:"Медь",addr:"Гражданский 23к1",tt:"107052",proj:"Oral Care OSA",inv:true,hours:"Круглосуточно",tim:"КСО",t:7,note:"Дир до 17:00. Товар в закрытом кабинете."},
-  {net:"Магнит ДК",lvl:"Золото",addr:"ул. Руставели 12",tt:"107057",proj:"Gillette OSA",inv:true,hours:"08:00 – 23:00",tim:"КСО",t:25,note:"Админ Елена. Рустам Фаргартович."},
-  {net:"Магнит ДК",lvl:"Золото",addr:"ул. Руставели 12",tt:"107057",proj:"Oral Care OSA",inv:true,hours:"08:00 – 23:00",tim:"КСО",t:7,note:"Админ Елена. Рустам Фаргартович."},
-  {net:"Пятёрочка",lvl:"Медь",addr:"пр. Непокорённых 6к1",tt:"142633",proj:"Gillette",hours:"—",tim:"—",t:15},
-  {net:"Магнит ДК",lvl:"Серебро",addr:"Светлановский пр. 8",tt:"107071",proj:"Gillette OSA",hours:"08:00 – 22:30",tim:"КСО",t:20,note:"Солнце слепит, лучше вечером."}
+  {net:"Магнит ДК",lvl:"Медь",addr:"Пискарёвский 165к1",tt:"107060",proj:"Gillette OSA",hours:"08:30 – 22:30",tim:"КСО",t:20,la:60.0075248,lo:30.4511935,inv:true},
+  {net:"Магнит ДК",lvl:"Железо",addr:"Пискарёвский 145к6",tt:"163719",proj:"Gillette OSA",hours:"10:00 – 22:00",tim:"КСО",t:26,la:60.0026805,lo:30.4504874,note:"2 КСО, но оборудование на 1 КСО."},
+  {net:"Магнит ДК",lvl:"Золото",addr:"ул. Руставели 12",tt:"107057",proj:"Gillette OSA",hours:"08:00 – 23:00",tim:"КСО",t:25,la:60.0006078,lo:30.4355936,inv:true,note:"Админ Елена. Рустам Фаргартович."},
+  {net:"Магнит ДК",lvl:"Золото",addr:"ул. Руставели 12",tt:"107057",proj:"Oral Care OSA",hours:"08:00 – 23:00",tim:"КСО",t:7,la:60.0006078,lo:30.4355936,inv:true,note:"Админ Елена. Рустам Фаргартович."},
+  {net:"Пятёрочка",lvl:"Медь",addr:"Карпинского 16",tt:"155954",proj:"Gillette",hours:"—",tim:"—",t:15,la:60.0051899,lo:30.4192567},
+  {net:"Дикси",lvl:"Серебро",addr:"пр. Науки 55",tt:"107038",proj:"Gillette OSA",hours:"Круглосуточно",tim:"—",t:24,la:60.0074658,lo:30.4174418},
+  {net:"Пятёрочка",lvl:"Серебро",addr:"Карпинского 38к1",tt:"141417",proj:"Gillette",hours:"—",tim:"—",t:15,la:60.0129948,lo:30.4286134},
+  {net:"Магнит ДК",lvl:"Железо",addr:"пр. Науки 24к1",tt:"123457954",proj:"Gillette OSA",hours:"09:00 – 22:00",tim:"КСО",t:26,la:60.0095102,lo:30.4135064,note:"Не было полок с одноразкой."},
+  {net:"Дикси",lvl:"Медь",addr:"пр. Науки 25",tt:"107043",proj:"Gillette OSA",hours:"09:00 – 23:00",tim:"—",t:24,la:60.009714,lo:30.4062034},
+  {net:"Магнит ДК",lvl:"Серебро",addr:"ул. Верности 9",tt:"107065",proj:"Gillette OSA",hours:"08:00 – 22:00",tim:"КСО",t:20,la:60.007771,lo:30.3986852,note:"Ценники: моментальная, мобайл 2."},
+  {net:"Магнит ДК",lvl:"Серебро",addr:"ул. Верности 9",tt:"107065",proj:"Oral Care OSA",hours:"08:00 – 22:00",tim:"КСО",t:7,la:60.007771,lo:30.3986852,note:"Ценники: моментальная, мобайл 2."},
+  {net:"Магнит ДК",lvl:"Железо",addr:"пр. Науки 19к2литА",tt:"177198",proj:"Gillette OSA",hours:"08:00 – 22:30",tim:"КСО",t:26,la:60.012559,lo:30.393987,note:"Дир машет контрактом, запрет ТИМ."},
+  {net:"Магнит ДК",lvl:"Медь",addr:"ул. Обручевых 5",tt:"163836",proj:"Gillette OSA",hours:"(уточнить)",tim:"КСО",t:26,la:60.0124166,lo:30.3791851},
+  {net:"Магнит ДК",lvl:"Медь",addr:"пр. Науки 17к5лит3",tt:"166733",proj:"Gillette OSA",hours:"08:39 – 22:30",tim:"КСО",t:26,la:60.0131481,lo:30.3895197},
+  {net:"Магнит ДК",lvl:"Медь",addr:"Гражданский 23к1",tt:"107052",proj:"Gillette OSA",hours:"Круглосуточно",tim:"КСО",t:20,la:60.0054631,lo:30.3910023,inv:true,note:"Дир до 17:00. Товар в закрытом кабинете."},
+  {net:"Магнит ДК",lvl:"Медь",addr:"Гражданский 23к1",tt:"107052",proj:"Oral Care OSA",hours:"Круглосуточно",tim:"КСО",t:7,la:60.0054631,lo:30.3910023,inv:true,note:"Дир до 17:00. Товар в закрытом кабинете."},
+  {net:"Магнит КМ",lvl:"Серебро",addr:"Гражданский 23к1",tt:"106975",proj:"Gillette",hours:"10:00 – 22:00",tim:"КМ1",t:39,la:60.0054631,lo:30.3910023,note:"Дир Людмила Александровна."},
+  {net:"Магнит КМ",lvl:"Серебро",addr:"Гражданский 23к1",tt:"106975",proj:"Oral Care",hours:"10:00 – 22:00",tim:"КМ1",t:17,la:60.0054631,lo:30.3910023,note:"Дир Людмила Александровна."},
+  {net:"Пятёрочка",lvl:"Медь",addr:"пр. Непокорённых 6к1",tt:"142633",proj:"Gillette",hours:"—",tim:"—",t:15,la:59.9978057,lo:30.3710102},
+  {net:"Аптека",lvl:"—",addr:"Тореза 40к1 литА",tt:"apteka",proj:"Забрать лекарство",hours:"09:00 – 21:00",tim:"—",t:15,la:60.006979,lo:30.352419,note:"Сбер Еаптека · 2 662 ₽ · забронировано"},
+  {net:"Магнит ДК",lvl:"Серебро",addr:"Светлановский пр. 8",tt:"107071",proj:"Gillette OSA",hours:"08:00 – 22:30",tim:"КСО",t:20,la:60.0078375,lo:30.3386226,note:"Солнце слепит, лучше вечером."}
  ]
 };
 const BASE=[{"i": "glz_106969", "l": "—", "h": "—", "c": ""}, {"i": "glz_106970", "l": "—", "h": "—", "c": ""}, {"i": "glz_106971", "l": "—", "h": "10:00 – 22:00", "c": ""}, {"i": "glz_106974", "l": "Серебро", "h": "10:09 – 22:00", "c": ""}, {"i": "glz_106975", "l": "Серебро", "h": "10:00 – 22:00", "c": "Дир Людмила Александровна."}, {"i": "glz_106976", "l": "Серебро", "h": "10:00 – 22:00", "c": ""}, {"i": "glz_106977", "l": "Золото", "h": "09:30 – 21:30", "c": "Дир Дарья Дмитриевна. Сейфбоксы для Oral."}, {"i": "glz_107031", "l": "Железо", "h": "09:00 – 22:00", "c": "Дир Светлана Сергеевна."}, {"i": "glz_107032", "l": "Медь", "h": "08:00 – 23:00", "c": ""}, {"i": "glz_107033", "l": "Железо", "h": "08:00 – 23:00", "c": ""}, {"i": "glz_107034", "l": "Серебро", "h": "08:00 – 22:00", "c": "ЛПР Татьяна."}, {"i": "glz_107035", "l": "Золото", "h": "Круглосуточно", "c": "Весь товар под алкашкой."}, {"i": "glz_107036", "l": "Медь", "h": "08:00 – 23:00", "c": ""}, {"i": "glz_107037", "l": "Золото", "h": "Круглосуточно", "c": ""}, {"i": "glz_107038", "l": "Серебро", "h": "Круглосуточно", "c": ""}, {"i": "glz_107039", "l": "Медь", "h": "Круглосуточно", "c": "Грязные боксы, глючит принтер."}, {"i": "glz_107041", "l": "Железо", "h": "09:00 – 23:00", "c": ""}, {"i": "glz_107042", "l": "Серебро", "h": "Круглосуточно", "c": ""}, {"i": "glz_107043", "l": "Медь", "h": "09:00 – 23:00", "c": ""}, {"i": "glz_107044", "l": "Серебро", "h": "08:00 – 23:00", "c": ""}, {"i": "glz_107045", "l": "Медь", "h": "10:00 – 22:00", "c": ""}, {"i": "glz_107046", "l": "Медь", "h": "Круглосуточно", "c": ""}, {"i": "glz_107047", "l": "Железо", "h": "07:00 – 23:00", "c": "Дир Валера. Ключ у кассира. Взять маркер, сетки."}, {"i": "glz_107048", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_107049", "l": "Серебро", "h": "07:00 – 23:00", "c": ""}, {"i": "glz_107050", "l": "Медь", "h": "08:30 – 22:00", "c": "Нет корзин на КСО."}, {"i": "glz_107051", "l": "Серебро", "h": "08:00 – 22:30", "c": "Часть товара в телегах."}, {"i": "glz_107052", "l": "Медь", "h": "Круглосуточно", "c": "Дир до 17:00. Товар в закрытом кабинете."}, {"i": "glz_107054", "l": "Серебро", "h": "08:00 – 23:00", "c": ""}, {"i": "glz_107055", "l": "Медь", "h": "09:00 – 22:00", "c": "Запрет на выкладку на не нашем оборудовании."}, {"i": "glz_107056", "l": "Золото", "h": "07:00 – 23:00", "c": "Запрет директора. Ехать попозже."}, {"i": "glz_107057", "l": "Золото", "h": "08:00 – 23:00", "c": "Админ Елена. Рустам Фаргартович."}, {"i": "glz_107058", "l": "Золото", "h": "Круглосуточно", "c": "Отломан ценникодержатель (нет в опроснике)."}, {"i": "glz_107059", "l": "Медь", "h": "08:30 – 22:30", "c": ""}, {"i": "glz_107060", "l": "Медь", "h": "08:30 – 22:30", "c": ""}, {"i": "glz_107061", "l": "Серебро", "h": "08:30 – 22:30", "c": "Дир Ольга Викторовна. Запрет на инвент."}, {"i": "glz_107062", "l": "Серебро", "h": "08:30 – 23:00", "c": "Товаровед Сергей. Только 1/2 полки."}, {"i": "glz_107063", "l": "Медь", "h": "08:30 – 22:30", "c": ""}, {"i": "glz_107064", "l": "Золото", "h": "08:00 – 23:00", "c": "Дир Анна Владимировна. Закрытая парковка!"}, {"i": "glz_107065", "l": "Серебро", "h": "08:00 – 22:00", "c": "Ценники: моментальная, мобайл 2."}, {"i": "glz_107069", "l": "Медь", "h": "08:00 – 23:00", "c": "Протереть бокс, 4 крючка. Запрет директора."}, {"i": "glz_107070", "l": "Медь", "h": "08:30 – 22:30", "c": ""}, {"i": "glz_107071", "l": "Серебро", "h": "08:00 – 22:30", "c": "Солнце слепит, лучше вечером."}, {"i": "glz_107072", "l": "Золото", "h": "08:00 – 23:00", "c": "Админ Майя. Запрет на ТИМ. Ценники: моментальная, мобайл 3."}, {"i": "glz_107073", "l": "Золото", "h": "Круглосуточно", "c": "Протереть боксы! Нужны ценникодержатели."}, {"i": "glz_107075", "l": "Железо", "h": "08:00 – 23:00", "c": "Запрет директора."}, {"i": "glz_122578", "l": "Железо", "h": "09:00 – 23:00", "c": ""}, {"i": "glz_123457954", "l": "Железо", "h": "09:00 – 22:00", "c": "Не было полок с одноразкой."}, {"i": "glz_133420", "l": "Медь", "h": "08:30 – 22:30", "c": ""}, {"i": "glz_133519", "l": "Железо", "h": "08:00 – 22:00", "c": "Дир Мария Сергеевна."}, {"i": "glz_141415", "l": "Золото", "h": "—", "c": ""}, {"i": "glz_141417", "l": "Серебро", "h": "—", "c": ""}, {"i": "glz_141428", "l": "Золото", "h": "—", "c": ""}, {"i": "glz_141432", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_141456", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_141459", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_141559", "l": "Золото", "h": "—", "c": ""}, {"i": "glz_141566", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_142268", "l": "Золото", "h": "—", "c": ""}, {"i": "glz_142633", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_142653", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_143301", "l": "Серебро", "h": "—", "c": ""}, {"i": "glz_146012", "l": "Серебро", "h": "—", "c": ""}, {"i": "glz_146289", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_146324", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_146448", "l": "Железо", "h": "—", "c": ""}, {"i": "glz_146454", "l": "Серебро", "h": "—", "c": ""}, {"i": "glz_147811", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_153537", "l": "—", "h": "10:00 – 22:00", "c": ""}, {"i": "glz_153793", "l": "—", "h": "10:00 – 22:00", "c": ""}, {"i": "glz_155954", "l": "Медь", "h": "—", "c": ""}, {"i": "glz_155956", "l": "Медь", "h": "09:00 – 23:00", "c": ""}, {"i": "glz_158204", "l": "Медь", "h": "09:00 – 22:00", "c": "Заказать сервис бокса! (Бокс не работает)."}, {"i": "glz_159341", "l": "Железо", "h": "(уточнить)", "c": ""}, {"i": "glz_163700", "l": "Железо", "h": "08:00 – 22:00", "c": ""}, {"i": "glz_163719", "l": "Железо", "h": "10:00 – 22:00", "c": "2 КСО, но оборудование на 1 КСО."}, {"i": "glz_163765", "l": "Железо", "h": "10:00 – 22:00", "c": ""}, {"i": "glz_163822", "l": "Железо", "h": "08:00 – 22:00", "c": "КСО: 2, Муз.бокс: 1, Кассы с боксами: 2."}, {"i": "glz_163836", "l": "Медь", "h": "(уточнить)", "c": ""}, {"i": "glz_166733", "l": "Медь", "h": "08:39 – 22:30", "c": ""}, {"i": "glz_169217", "l": "Железо", "h": "09:00 – 22:00", "c": "Админ Александра (толстенькая). Ценники: моментальная, термо 1."}, {"i": "glz_177198", "l": "Железо", "h": "08:00 – 22:30", "c": "Дир машет контрактом, запрет ТИМ."}, {"i": "glz_177201", "l": "Медь", "h": "08:30 – 22:30", "c": "Дир Оксанa Викторовна."}, {"i": "glz_201342", "l": "—", "h": "—", "c": ""}];
 function presetFor(date){return PRESETS[date]||null}
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="19-11-1";
+const PRESET_VER="19-11-2";
 
 const SEED=[
  {net:"Магнит ДК",lvl:"Медь",addr:"Муринский, 51",tt:"107070",proj:"Gillette OSA",inv:true,hours:"08:30–22:30",tim:"КСО"},
@@ -308,11 +332,46 @@ function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.ev
 function gPns(rows){const w=rows.filter(p=>p.kind==="km");return w.length?w.every(p=>p.pnDone):null}
 function gOral(rows){const w=rows.filter(p=>/oral/i.test(p.proj||""));return w.length?w.every(p=>p.oralDone):null}
 function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("Gillette OSA","Gillette OSA")}
+
+function mapPoints(){
+  const all=pts(state.active), seen=new Set(), out=[];
+  all.forEach(p=>{
+    const k=String(p.tt); if(seen.has(k))return; seen.add(k);
+    const la=(p.la!=null?p.la:(baseOf(p.tt)||{}).la), lo=(p.lo!=null?p.lo:(baseOf(p.tt)||{}).lo);
+    if(la==null||lo==null)return;
+    out.push({tt:p.tt,net:p.net,addr:p.addr,hours:p.hours,la:+la,lo:+lo,done:p.done});
+  });
+  return out;
+}
+let mapObj=null;
+function openMap(){
+  if(typeof L==="undefined"){alert("Карта не загрузилась — нужен интернет");return}
+  document.getElementById("mapwrap").classList.add("on");
+  if(!mapObj){
+    mapObj=L.map("map",{zoomControl:true,attributionControl:true});
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(mapObj);
+  }
+  setTimeout(()=>{mapObj.invalidateSize();drawMap();},80);
+}
+function drawMap(){
+  if(!mapObj)return;
+  mapObj.eachLayer(l=>{ if(l instanceof L.Marker || l instanceof L.Polyline) mapObj.removeLayer(l) });
+  const ps=mapPoints(); if(!ps.length){mapObj.setView([60.005,30.40],12);return}
+  const ll=ps.map(p=>[p.la,p.lo]);
+  L.polyline(ll,{color:"#4a7bb5",weight:4,opacity:.85}).addTo(mapObj);
+  ps.forEach((p,i)=>{
+    const ph=/Аптека/i.test(p.net||"");
+    const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${ph?"ph":""}">${i+1}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
+    L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
+      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}<br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Открыть в Яндекс.Навигаторе</a>`);
+  });
+  try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
+}
 function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const ir=all.filter(p=>p.inv);if(!ir.length)return "";const d=ir.filter(p=>p.invDone).length;return ` · инвент <b>${d}/${ir.length}</b>`+ (d<ir.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v21`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const ir=all.filter(p=>p.inv);if(!ir.length)return "";const d=ir.filter(p=>p.invDone).length;return ` · инвент <b>${d}/${ir.length}</b>`+ (d<ir.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v22`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -550,6 +609,9 @@ document.getElementById("t-add").onclick=()=>{
 
 renderRoute();renderTasks();renderCal();fillReport();
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+
+document.getElementById("btn-map").onclick=openMap;
+document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
 </body>
 </html>
