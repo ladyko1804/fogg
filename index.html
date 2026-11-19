@@ -88,6 +88,9 @@ header{position:relative}
 #mapwrap.on{display:flex}
 #mapbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
 #map{flex:1;min-height:0}
+.shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
+.sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
+.sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
 .pin{width:28px;height:28px;border-radius:50%;background:#f1c40f;color:#241f10;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .pin.dn{background:#2e7d32}
 .pin.ph{background:#7b1fa2}
@@ -385,7 +388,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v27`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v28`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -437,11 +440,12 @@ function renderRoute(){
       <div style="flex:1;min-width:0">
         <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}${f.time&&!isDone?`${closeInfo(p.hours)?` <span class="${closeInfo(p.hours).closed?"bad":"warn"}" style="font-size:12.5px">${closeInfo(p.hours).label}</span>`:""}`:""}</div>
-        <div class="meta">${projs}${rows.length>1&&total?` · всего ${total} мин`:""}${p.note?" · "+p.note:""}</div>
+        <div class="meta">${projs}${rows.length>1&&total?` · всего ${total} мин`:""}${rows[0].shelves?" · полок: "+rows[0].shelves:""}${p.note?" · "+p.note:""}</div>
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
           ${inv!==null?`<button class="chk ${inv?"on":""}" data-inv="${idx0(idxs)}">Инвент</button>`:""}
           ${tim!==null?`<button class="chk ${tim?"on":""}" data-tim="${idx0(idxs)}">${timLabel}</button>`:""}
+          ${tim===true?`<span class="shelves">полки: ${[1,2,3,4,5].map(n=>`<button class="sbtn ${(+rows[0].shelves===n)?"on":""}" data-shelf="${idx0(idxs)}|${n}">${n}</button>`).join("")}</span>`:""}
           ${pns!==null?`<button class="chk ${pns?"on":""}" data-pn="${idx0(idxs)}">ПН</button>`:""}
           ${oral!==null?`<button class="chk ${oral?"on":""}" data-oral="${idx0(idxs)}">Oral</button>`:""}
         </div>
@@ -462,6 +466,7 @@ function renderRoute(){
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.inv);const v=!gRows(g).every(p=>p.invDone);gRows(g).forEach(p=>{if(p.inv)p.invDone=v});save();renderRoute()});
+  wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
   wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.tim);const w=gRows(g).filter(p=>p.kind!=="none");const v=!w.every(p=>p.timDone);w.forEach(p=>p.timDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
