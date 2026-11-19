@@ -99,6 +99,13 @@ header{position:relative}
 .shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
 .sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
 .card{position:relative}
+.netbadge{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font:700 11px/1 system-ui;margin-right:7px;vertical-align:middle;flex:0 0 auto}
+.donehead{display:flex;justify-content:space-between;align-items:center;background:#141a21;border:1px solid var(--line);
+  border-radius:12px;padding:12px 14px;margin:10px 0 6px;font-weight:600;font-size:14px;color:#b8c6d6}
+.card.dim{opacity:.62}
+.card.dim .t{font-size:14px;font-weight:600}
+.card.dim .addr{font-size:12.5px}
 .vdel{position:absolute;right:36px;bottom:7px;width:26px;height:26px;border-radius:8px;padding:0;
   background:#1a1f26;border:1px solid var(--line);color:#c9d4e0;font-size:12px;line-height:24px;text-align:center}
 .xdel{position:absolute;right:7px;bottom:7px;width:26px;height:26px;border-radius:8px;padding:0;
@@ -125,13 +132,13 @@ header{position:relative}
 .small.sent{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6}
 .meta.cmt{color:#e8c07d;white-space:pre-wrap}
 .pin{width:28px;height:28px;border-radius:50%;background:#f1c40f;color:#241f10;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
-.pin.dn{background:#2e7d32}
+.pin.dn{background:#77828f}
 .pin.ph{background:#7b1fa2}
 .pin.iv{box-shadow:0 0 0 3px #e67e22,0 1px 5px #000a;position:relative}
 .pin.iv i{position:absolute;right:-6px;top:-6px;width:14px;height:14px;border-radius:50%;background:#e67e22;color:#1a1f26;font:700 9px/14px system-ui;font-style:normal}
 .legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 14px;font-size:11.5px;color:#9fb0c4;border-bottom:1px solid var(--line)}
 .legend b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
-.legend .l-red{background:#f1c40f}.legend .l-grn{background:#2e7d32}.legend .l-ph{background:#7b1fa2}
+.legend .l-red{background:#f1c40f}.legend .l-grn{background:#77828f}.legend .l-ph{background:#7b1fa2}
 .legend .l-inv{background:#f1c40f;box-shadow:0 0 0 2px #e67e22}
 .leaflet-popup-content{font-size:13px;line-height:1.45}
 .leaflet-popup-content a{color:#32506f}
@@ -229,7 +236,7 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
 
 <div id="mapwrap">
   <div id="mapbar"><b>Точки на карте</b><button id="map-close">Закрыть</button></div>
-  <div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>сделан</span><span><b class="l-inv"></b>инвентаризация</span><span><b class="l-ph"></b>аптека</span></div>
+  <div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>закрыт (серый)</span><span><b class="l-inv"></b>инвентаризация</span><span><b class="l-ph"></b>аптека</span></div>
   <div id="map"></div>
 </div>
 
@@ -470,6 +477,22 @@ function gInv(rows){const w=rows.filter(p=>p.inv);return w.length?w.every(p=>p.i
 function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.every(p=>p.timDone):null}
 function gPns(rows){const w=rows.filter(p=>p.kind==="km");return w.length?w.every(p=>p.pnDone):null}
 function gOral(rows){const w=rows.filter(p=>/oral/i.test(p.proj||""));return w.length?w.every(p=>p.oralDone):null}
+function netBadge(net){
+  const n=String(net||"");
+  let bg="#41505f", fg="#fff", l=(n[0]||"•").toUpperCase();
+  if(/Пятёрочка/i.test(n)){bg="#d32f2f";fg="#fff";l="5"}
+  else if(/Дикси/i.test(n)){bg="#f57c00";fg="#fff";l="Д"}
+  else if(/Магнит/i.test(n)){bg="#c62828";fg="#fff";l="М"}
+  else if(/Перекр/i.test(n)){bg="#2e7d32";fg="#fff";l="Х"}
+  else if(/Верный/i.test(n)){bg="#1565c0";fg="#fff";l="В"}
+  else if(/Подружка/i.test(n)){bg="#ad1457";fg="#fff";l="П"}
+  else if(/РивГош/i.test(n)){bg="#6a1b9a";fg="#fff";l="Р"}
+  else if(/МВидео/i.test(n)){bg="#fbc02d";fg="#241f10";l="М"}
+  else if(/Эльдорадо/i.test(n)){bg="#00897b";fg="#fff";l="Э"}
+  else if(/Аптек/i.test(n)){bg="#7b1fa2";fg="#fff";l="А"}
+  else if(/Личн/i.test(n)){bg="#37474f";fg="#fff";l="•"}
+  return `<span class="netbadge" style="background:${bg};color:${fg}">${l}</span>`;
+}
 function esc(t){return String(t||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]))}
 function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("Gillette OSA","Gillette OSA")}
 
@@ -778,7 +801,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v48`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v49`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -840,6 +863,7 @@ function renderRoute(){
   if(!groups.length){const e=document.createElement("div");e.className="card";e.innerHTML='<div class="hint">Под этот фильтр ничего нет</div>';wrap.appendChild(e)}
 
   const curG=groups.findIndex(g=>!gDone(g.rows));
+  const doneEls=[];
   groups.forEach(({idxs,rows},pos)=>{
     const p=rows[0];
     const isDone=gDone(rows), running=rows.some(x=>x.start&&!x.end);
@@ -853,7 +877,7 @@ function renderRoute(){
     el.innerHTML=`<button class="vdel" data-void="${idx0(idxs)}" title="Удалить визит — обнулить отметки">🗑</button><button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
-        <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
+        <div class="t">${netBadge(p.net)}${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}${f.time&&!isDone?`${closeInfo(p.hours)?` <span class="${closeInfo(p.hours).closed?"bad":"warn"}" style="font-size:12.5px">${closeInfo(p.hours).label}</span>`:""}`:""}</div>
         <div class="meta">${[rows[0].shelves?"полок: "+rows[0].shelves:"",p.note||""].filter(Boolean).join(" · ")}</div>
         ${rows[0].comment?`<div class="meta cmt">💬 ${esc(rows[0].comment)}</div>`:""}
@@ -889,8 +913,19 @@ function renderRoute(){
         <button class="small" data-down="${idx0(idxs)}" ${(pos===groups.length-1||isDone||running)?"disabled style=opacity:.25":""}>↓</button>
       </div>
     </div>`;
-    wrap.appendChild(el);
+    if(isDone&&!(state.keepTt&&String(p.tt)===String(state.keepTt))){el.classList.add("dim");doneEls.push(el);}
+    else wrap.appendChild(el);
   });
+  if(doneEls.length){
+    const h=document.createElement("div");h.className="donehead";
+    h.innerHTML=`<span>Завершено · ${doneEls.length}</span><span class="caret">${state.doneOpen?"▾":"▸"}</span>`;
+    h.onclick=()=>{state.doneOpen=!state.doneOpen;save();renderRoute()};
+    wrap.appendChild(h);
+    const box=document.createElement("div");box.id="donebox";
+    if(!state.doneOpen)box.style.display="none";
+    doneEls.forEach(e=>box.appendChild(e));
+    wrap.appendChild(box);
+  }
 
   // итоги дня одним текстом — чтобы переслать ассистенту
   {
