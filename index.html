@@ -59,6 +59,8 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .card.moved{border-color:#2f6fbf;box-shadow:0 0 0 2px rgba(68,147,248,.35)}
 .card.active{border-color:#7a3a44;background:#1d161a;box-shadow:inset 0 0 0 1px #53242c}
 .num.run{background:#8c3b46;color:#fff}
+.ibtn{width:22px;height:22px;border-radius:50%;background:#1f6feb;border:0;color:#fff;
+  font:700 13px/22px Georgia,serif;padding:0;font-style:italic}
 .cmttext{font-size:12px;color:#e8c07d;flex:1 1 55%;min-width:0;overflow-wrap:anywhere}
 .cmtbtn{font-size:15px;padding:3px 9px;line-height:1.2;color:#fff}
 .cmtbtn.has{background:#1f2937;border-color:#3b4b5f}
@@ -115,6 +117,8 @@ header{position:relative}
 .small.del{background:#2a1416;border-color:#5a2a2f;color:#e08a86}
 .chk.no{background:#3a1d20;border-color:#6b2a2f;color:#ff9a94}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
+#infwrap{position:fixed;inset:0;background:#000b;z-index:90;display:none;align-items:center;justify-content:center;padding:16px}
+#infwrap.on{display:flex}
 #optwrap{position:fixed;inset:0;background:#000b;z-index:89;display:none;align-items:center;justify-content:center;padding:16px}
 #optwrap.on{display:flex}
 #addwrap{position:fixed;inset:0;background:#000b;z-index:88;display:none;align-items:center;justify-content:center;padding:16px}
@@ -156,6 +160,7 @@ document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
 document.getElementById("add-from-codes").onclick=quickAdd;
 document.getElementById("opt-ok").onclick=runOpt;
+document.getElementById("inf-close").onclick=()=>document.getElementById("infwrap").classList.remove("on");
 document.getElementById("opt-cancel").onclick=()=>document.getElementById("optwrap").classList.remove("on");
 document.getElementById("add-cancel").onclick=()=>document.getElementById("addwrap").classList.remove("on");
 document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
@@ -171,6 +176,14 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="sub" id="h-sub">—</div>
   <button id="btn-map" title="Карта точек">Карта</button>
 </header>
+
+<div id="infwrap">
+  <div class="cmtbox">
+    <div class="cmthead" id="inf-who">Информация</div>
+    <div id="inf-body" style="font-size:13.5px;line-height:1.55;color:#cfd8e3"></div>
+    <div class="cmtfoot"><button id="inf-close" class="small">Закрыть</button></div>
+  </div>
+</div>
 
 <div id="optwrap">
   <div class="cmtbox">
@@ -738,6 +751,22 @@ function optimizeDay(from){
   alert("Готово. Порядок пересобран, по прямой примерно "+km+" км в одну сторону.");
 }
 let optFrom=null;
+function showInfo(i){
+  const p=pts(state.active)[+i]; const b=baseOf(p.tt)||{};
+  document.getElementById("inf-who").textContent=(p.net||"")+" · "+p.addr;
+  const rows=[];
+  if(p.hours&&p.hours!=="—")rows.push("<b>Часы:</b> "+p.hours);
+  if(p.lvl&&p.lvl!=="—")rows.push("<b>Уровень:</b> "+p.lvl);
+  if(p.prio)rows.push("<b>Приоритет:</b> "+p.prio);
+  if(p.tim&&p.tim!=="—")rows.push("<b>ТИМ:</b> "+p.tim);
+  if(p.inv)rows.push("<b>Инвентаризация:</b> нужна");
+  if(p.ir)rows.push("<b>IR:</b> нужен");
+  const note=p.note||b.c;
+  const body=(note?"<div style='margin-bottom:8px;color:#e8c07d'>"+esc(note)+"</div>":"")+
+    (rows.length?rows.join("<br>"):"<span style='color:#7c8b9c'>Пометок нет</span>");
+  document.getElementById("inf-body").innerHTML=body;
+  document.getElementById("infwrap").classList.add("on");
+}
 function openOpt(){
   optFrom=null;
   const host=document.getElementById("opt-from");host.innerHTML="";
@@ -879,7 +908,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v52`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v53`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -918,9 +947,10 @@ function renderRoute(){
       <div style="flex:1;min-width:0">
         <div class="t">${netBadge(p.net)}${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
-        <div class="meta">${[rows[0].shelves?"полок: "+rows[0].shelves:"",p.note||""].filter(Boolean).join(" · ")}</div>
+        <div class="meta">${rows[0].shelves?"полок: "+rows[0].shelves:""}</div>
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
+          <button class="ibtn" data-info="${idx0(idxs)}" title="Информация о магазине">i</button>
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
             return `<button class="chk ${dn?"on":(cl?"no":"")}" data-inv="${idx0(idxs)}">${dn?"Инвент ✓":(cl?"Инвент: нет":"Инвент")}</button>`;})():""}
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
@@ -998,6 +1028,7 @@ function renderRoute(){
     state.keepTt=null; save(); renderRoute();
   });
   wrap.querySelectorAll("[data-rpt]").forEach(b=>b.onclick=()=>openRpt(b.dataset.rpt));
+  wrap.querySelectorAll("[data-info]").forEach(b=>b.onclick=()=>showInfo(b.dataset.info));
   wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
@@ -1174,6 +1205,7 @@ document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
 document.getElementById("add-from-codes").onclick=quickAdd;
 document.getElementById("opt-ok").onclick=runOpt;
+document.getElementById("inf-close").onclick=()=>document.getElementById("infwrap").classList.remove("on");
 document.getElementById("opt-cancel").onclick=()=>document.getElementById("optwrap").classList.remove("on");
 document.getElementById("add-cancel").onclick=()=>document.getElementById("addwrap").classList.remove("on");
 document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
