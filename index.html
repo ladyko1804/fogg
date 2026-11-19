@@ -64,8 +64,8 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .chip2{flex:0 0 auto;font-size:12.5px;padding:6px 10px;border-radius:999px;background:#12171d;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
 .chip2.sel{background:#1d2b3d;border-color:var(--accent);color:#dbe9ff}
 .chkline{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.chk{font-size:12.5px;padding:6px 10px;border-radius:9px;background:#12171d;border:1px solid var(--line);color:#93a1b0}
-.chk.on{background:#17301f;border-color:#2c5c3a;color:#8fe0a8}
+.chk{font-size:12.5px;padding:6px 10px;border-radius:9px;background:#2b1619;border:1px solid #6d2f36;color:#ff9a94;font-weight:600}
+.chk.on{background:#17301f;border-color:#2c5c3a;color:#8fe0a8;font-weight:500}
 .arrowbox{display:flex;flex-direction:column;gap:6px;margin-left:6px}
 .arrowbox button{padding:6px 9px;font-size:14px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
@@ -293,7 +293,7 @@ function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("
 function renderRoute(){
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v18`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v19`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
