@@ -273,6 +273,17 @@ function groupRows(list){
   return [...map.values()];
 }
 function gDone(rows){return rows.every(p=>p.done)}
+function closeInfo(hours){
+  const h=String(hours||"");
+  if(/круглосут/i.test(h))return {left:1e9,label:"круглосуточно",closed:false};
+  const m=h.match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);
+  if(!m)return null;
+  const now=new Date();
+  const close=new Date(now);close.setHours(+m[3],+m[4],0,0);
+  const left=Math.round((close-now)/60000);
+  if(left<0)return {left,label:"закрыт",closed:true};
+  return {left,label:"до закрытия "+fmtDur(left),closed:false};
+}
 function endOf(g){const e=g.rows.map(p=>p.end).filter(Boolean).map(x=>new Date(x).getTime());return e.length?Math.max(...e):0}
 function gInv(rows){const w=rows.filter(p=>p.inv);return w.length?w.every(p=>p.invDone):null}
 function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.every(p=>p.timDone):null}
@@ -282,7 +293,7 @@ function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("
 function renderRoute(){
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v17`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v18`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -291,12 +302,14 @@ function renderRoute(){
   const fbar=document.createElement("div");fbar.className="filters";
   fbar.innerHTML=`<span class="chip2 ${!f.lvl?"sel":""}" data-fl="">Все</span>`+
     ["Золото","Серебро","Медь","Железо"].map(l=>`<span class="chip2 ${f.lvl===l?"sel":""}" data-fl="${l}">${l}</span>`).join("")+
+    `<span class="chip2 ${f.time?"sel":""}" data-fm="1">По времени</span>`+
     `<span class="chip2 ${f.inv?"sel":""}" data-fi="1">Инвент</span>`+
     `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ</span>`;
   wrap.appendChild(fbar);
   fbar.querySelectorAll("[data-fl]").forEach(c=>c.onclick=()=>{f.lvl=c.dataset.fl||null;save();renderRoute()});
   fbar.querySelectorAll("[data-fi]").forEach(c=>c.onclick=()=>{f.inv=!f.inv;save();renderRoute()});
   fbar.querySelectorAll("[data-ft]").forEach(c=>c.onclick=()=>{f.tim=!f.tim;save();renderRoute()});
+  fbar.querySelectorAll("[data-fm]").forEach(c=>c.onclick=()=>{f.time=!f.time;save();renderRoute()});
 
   let groups=groupRows(all).map(idxs=>({idxs,rows:idxs.map(i=>all[i])}));
   if(f.lvl)groups=groups.filter(g=>g.rows.some(p=>p.lvl===f.lvl));
@@ -307,7 +320,11 @@ function renderRoute(){
     const runningG=groups.filter(g=>g.rows.some(p=>p.start&&!p.end));
     const doneG=groups.filter(g=>!g.rows.some(p=>p.start&&!p.end)&&gDone(g.rows))
       .sort((a,b)=>endOf(a)-endOf(b));
-    const pendingG=groups.filter(g=>!runningG.includes(g)&&!doneG.includes(g));
+    let pendingG=groups.filter(g=>!runningG.includes(g)&&!doneG.includes(g));
+    if(f.time){
+      const leftOf=g=>{const ci=closeInfo(g.rows[0].hours);return ci?ci.left:1e12};
+      pendingG=pendingG.slice().sort((a,b)=>leftOf(a)-leftOf(b));
+    }
     groups=runningG.concat(pendingG,doneG);
   }
   if(!groups.length){const e=document.createElement("div");e.className="card";e.innerHTML='<div class="hint">Под этот фильтр ничего нет</div>';wrap.appendChild(e)}
@@ -327,7 +344,7 @@ function renderRoute(){
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
         <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
-        <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
+        <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}${f.time&&!isDone?`${closeInfo(p.hours)?` <span class="${closeInfo(p.hours).closed?"bad":"warn"}" style="font-size:12.5px">${closeInfo(p.hours).label}</span>`:""}`:""}</div>
         <div class="meta">${projs}${rows.length>1&&total?` · всего ${total} мин`:""}${p.note?" · "+p.note:""}</div>
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
