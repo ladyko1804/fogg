@@ -115,6 +115,8 @@ header{position:relative}
 .small.del{background:#2a1416;border-color:#5a2a2f;color:#e08a86}
 .chk.no{background:#3a1d20;border-color:#6b2a2f;color:#ff9a94}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
+#optwrap{position:fixed;inset:0;background:#000b;z-index:89;display:none;align-items:center;justify-content:center;padding:16px}
+#optwrap.on{display:flex}
 #addwrap{position:fixed;inset:0;background:#000b;z-index:88;display:none;align-items:center;justify-content:center;padding:16px}
 #addwrap.on{display:flex}
 #add-fields input{width:100%;margin:4px 0 8px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:9px;padding:9px;font-size:14px}
@@ -153,6 +155,8 @@ document.getElementById("inv-ok").onclick=saveInv;
 document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
 document.getElementById("add-from-codes").onclick=quickAdd;
+document.getElementById("opt-ok").onclick=runOpt;
+document.getElementById("opt-cancel").onclick=()=>document.getElementById("optwrap").classList.remove("on");
 document.getElementById("add-cancel").onclick=()=>document.getElementById("addwrap").classList.remove("on");
 document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
 document.getElementById("inv-cancel").onclick=()=>document.getElementById("invwrap").classList.remove("on");
@@ -167,6 +171,16 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="sub" id="h-sub">—</div>
   <button id="btn-map" title="Карта точек">Карта</button>
 </header>
+
+<div id="optwrap">
+  <div class="cmtbox">
+    <div class="cmthead">Оптимизировать маршрут</div>
+    <label>Откуда поеду?</label>
+    <div class="chips" id="opt-from"></div>
+    <div class="hint" id="opt-hint">Порядок точек пересоберу по кратчайшему пути, инвенты и ТИМ останутся на своих местах в карточках.</div>
+    <div class="cmtfoot"><button id="opt-ok" class="primary small">Пересобрать</button><button id="opt-cancel" class="small">Отмена</button></div>
+  </div>
+</div>
 
 <div id="addwrap">
   <div class="cmtbox">
@@ -685,6 +699,69 @@ function saveCmt(){
   save(); document.getElementById("cmtwrap").classList.remove("on"); renderRoute();
 }
 
+
+const HOME={la:60.05418,lo:30.42965};
+function hav(a,b){
+  const R=6371,dLa=(b[0]-a[0])*Math.PI/180,dLo=(b[1]-a[1])*Math.PI/180;
+  const x=Math.sin(dLa/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+function dayBlocks(){
+  const all=pts(state.active), map=new Map();
+  all.forEach((p,i)=>{const k=String(p.tt);if(!map.has(k))map.set(k,{tt:k,rows:[],pt:p});map.get(k).rows.push(i)});
+  return [...map.values()];
+}
+function tourLen(seq,start){let d=0,cur=start;seq.forEach(b=>{const c=[b.pt.la,b.pt.lo];if(c[0]==null)return;d+=hav(cur,c);cur=c});return d}
+function optimizeDay(from){
+  const blocks=dayBlocks().filter(b=>b.pt.la!=null&&b.pt.lo!=null);
+  const noCoord=dayBlocks().filter(b=>b.pt.la==null||b.pt.lo==null);
+  if(blocks.length<3){alert("Мало точек с координатами — оптимизировать нечего");return}
+  let cur=from, left=blocks.slice(), seq=[];
+  while(left.length){                       // ближайший сосед
+    left.sort((a,b)=>hav(cur,[a.pt.la,a.pt.lo])-hav(cur,[b.pt.la,b.pt.lo]));
+    const b=left.shift(); seq.push(b); cur=[b.pt.la,b.pt.lo];
+  }
+  let improved=true, best=tourLen(seq,from);
+  while(improved){                          // 2-opt
+    improved=false;
+    for(let i=0;i<seq.length-1;i++)for(let j=i+1;j<seq.length;j++){
+      const cand=seq.slice(0,i).concat(seq.slice(i,j+1).reverse(),seq.slice(j+1));
+      const L=tourLen(cand,from);
+      if(L<best-1e-9){seq=cand;best=L;improved=true}
+    }
+  }
+  const all=pts(state.active), out=[];
+  seq.concat(noCoord).forEach(b=>b.rows.forEach(i=>out.push(all[i])));
+  state.days[state.active]=out;
+  state.keepTt=null; save(); renderRoute();
+  const km=best.toFixed(1);
+  alert("Готово. Порядок пересобран, по прямой примерно "+km+" км в одну сторону.");
+}
+let optFrom=null;
+function openOpt(){
+  optFrom=null;
+  const host=document.getElementById("opt-from");host.innerHTML="";
+  [["home","🏠 Из дома"],["now","📍 Я сейчас тут"],["first","① С первой точки"]].forEach(([v,t])=>{
+    const c=document.createElement("div");c.className="chip";c.textContent=t;
+    c.onclick=()=>{optFrom=v;[...host.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel")};
+    host.appendChild(c);
+  });
+  document.getElementById("optwrap").classList.add("on");
+}
+function runOpt(){
+  const list=pts(state.active);
+  if(!optFrom){alert("Выбери, откуда поедешь");return}
+  const close=()=>document.getElementById("optwrap").classList.remove("on");
+  if(optFrom==="home"||optFrom==="first"){
+    const from=optFrom==="home"?[HOME.la,HOME.lo]:[list[0].la,list[0].lo];
+    close(); optimizeDay(from); return;
+  }
+  if(!navigator.geolocation){alert("Геолокация недоступна");return}
+  navigator.geolocation.getCurrentPosition(
+    p=>{close();optimizeDay([p.coords.latitude,p.coords.longitude])},
+    ()=>{alert("Не получилось узнать, где ты. Выбери дом или первую точку.")}
+  );
+}
 let addKind=null, addInv=null, addIr=null;
 async function geocode(q){
   try{
@@ -802,9 +879,13 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v51`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v52`;
   const wrap=document.getElementById("s-route");
-  if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
+  if(!all.length){
+    wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
+      '<button class="small" id="btn-add-empty">+ Добавить точку</button></div></div>';
+    wrap.querySelector("#btn-add-empty").onclick=openAdd;
+    return}
   wrap.innerHTML="";
 
   let groups=groupRows(all).map(idxs=>({idxs,rows:idxs.map(i=>all[i])}));
@@ -887,10 +968,11 @@ function renderRoute(){
   // итоги дня одним текстом — чтобы переслать ассистенту
   {
     const box=document.createElement("div");box.className="card";
-    box.innerHTML=`<div class="chkline"><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
+    box.innerHTML=`<div class="chkline"><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-opt">Оптимизировать маршрут</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
+    box.querySelector("#btn-opt").onclick=openOpt;
     box.querySelector("#btn-copy").onclick=()=>{
       const t=dayText();
       const done=()=>{const h=document.getElementById("copy-hint");h.textContent="Скопировано. Вставь в чат со мной.";};
@@ -1091,6 +1173,8 @@ document.getElementById("inv-ok").onclick=saveInv;
 document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
 document.getElementById("add-from-codes").onclick=quickAdd;
+document.getElementById("opt-ok").onclick=runOpt;
+document.getElementById("opt-cancel").onclick=()=>document.getElementById("optwrap").classList.remove("on");
 document.getElementById("add-cancel").onclick=()=>document.getElementById("addwrap").classList.remove("on");
 document.getElementById("tim-cancel").onclick=()=>document.getElementById("timwrap").classList.remove("on");
 document.getElementById("inv-cancel").onclick=()=>document.getElementById("invwrap").classList.remove("on");
