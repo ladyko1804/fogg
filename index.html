@@ -513,7 +513,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v35`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v36`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -526,19 +526,21 @@ function renderRoute(){
     `<span class="chip2 ${f.inv?"sel":""}" data-fi="1">Инвент</span>`+
     `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ</span>`;
   wrap.appendChild(fbar);
-  fbar.querySelectorAll("[data-fl]").forEach(c=>c.onclick=()=>{f.lvl=c.dataset.fl||null;save();renderRoute()});
-  fbar.querySelectorAll("[data-fi]").forEach(c=>c.onclick=()=>{f.inv=!f.inv;save();renderRoute()});
-  fbar.querySelectorAll("[data-ft]").forEach(c=>c.onclick=()=>{f.tim=!f.tim;save();renderRoute()});
-  fbar.querySelectorAll("[data-fm]").forEach(c=>c.onclick=()=>{f.time=!f.time;save();renderRoute()});
+  fbar.querySelectorAll("[data-fl]").forEach(c=>c.onclick=()=>{state.keepTt=null;f.lvl=c.dataset.fl||null;save();renderRoute()});
+  fbar.querySelectorAll("[data-fi]").forEach(c=>c.onclick=()=>{state.keepTt=null;f.inv=!f.inv;save();renderRoute()});
+  fbar.querySelectorAll("[data-ft]").forEach(c=>c.onclick=()=>{state.keepTt=null;f.tim=!f.tim;save();renderRoute()});
+  fbar.querySelectorAll("[data-fm]").forEach(c=>c.onclick=()=>{state.keepTt=null;f.time=!f.time;save();renderRoute()});
 
   let groups=groupRows(all).map(idxs=>({idxs,rows:idxs.map(i=>all[i])}));
-  if(f.lvl)groups=groups.filter(g=>g.rows.some(p=>p.lvl===f.lvl));
-  if(f.inv)groups=groups.filter(g=>{const w=g.rows.filter(p=>p.inv);return w.length&&!w.every(p=>p.invDone)});
-  if(f.tim)groups=groups.filter(g=>{const w=g.rows.filter(p=>p.kind!=="none");return w.length&&!w.every(p=>p.timDone)});
+  const keep=state.keepTt?String(state.keepTt):null;
+  const isKeep=g=>keep&&String(g.rows[0].tt)===keep;
+  if(f.lvl)groups=groups.filter(g=>isKeep(g)||g.rows.some(p=>p.lvl===f.lvl));
+  if(f.inv)groups=groups.filter(g=>isKeep(g)||(()=>{const w=g.rows.filter(p=>p.inv);return w.length&&!w.every(p=>p.invDone)})());
+  if(f.tim)groups=groups.filter(g=>isKeep(g)||(()=>{const w=g.rows.filter(p=>p.kind!=="none");return w.length&&!w.every(p=>p.timDone)})());
   /* авто-раскладка: идущий визит — первым, закрытые — внизу, остальное в твоём порядке */
   {
     const runningG=groups.filter(g=>g.rows.some(p=>p.start&&!p.end));
-    const doneG=groups.filter(g=>!g.rows.some(p=>p.start&&!p.end)&&gDone(g.rows))
+    const doneG=groups.filter(g=>!isKeep(g)&&!g.rows.some(p=>p.start&&!p.end)&&gDone(g.rows))
       .sort((a,b)=>endOf(a)-endOf(b));
     let pendingG=groups.filter(g=>!runningG.includes(g)&&!doneG.includes(g));
     if(f.time){
@@ -616,11 +618,11 @@ function renderRoute(){
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
   wrap.querySelectorAll("[data-rpt]").forEach(b=>b.onclick=()=>openRpt(b.dataset.rpt));
   wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
-  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.inv);const v=!gRows(g).every(p=>p.invDone);gRows(g).forEach(p=>{if(p.inv)p.invDone=v});save();renderRoute()});
-  wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
-  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.tim);const w=gRows(g).filter(p=>p.kind!=="none");const v=!w.every(p=>p.timDone);w.forEach(p=>p.timDone=v);save();renderRoute()});
-  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
-  wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;const g=rowsOf(b.dataset.inv);const v=!gRows(g).every(p=>p.invDone);gRows(g).forEach(p=>{if(p.inv)p.invDone=v});save();renderRoute()});
+  wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
+  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;const g=rowsOf(b.dataset.tim);const w=gRows(g).filter(p=>p.kind!=="none");const v=!w.every(p=>p.timDone);w.forEach(p=>p.timDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.pn))[0].tt;const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.oral))[0].tt;const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
   wrap.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pend];p.end=new Date().toISOString();p.done=true;save();renderRoute()});
   wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.start));g.forEach(p=>{p.start=new Date().toISOString();p.end=null});save();renderRoute()});
