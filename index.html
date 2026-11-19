@@ -99,6 +99,8 @@ header{position:relative}
 .shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
 .sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
 .card{position:relative}
+.vdel{position:absolute;right:36px;bottom:7px;width:26px;height:26px;border-radius:8px;padding:0;
+  background:#1a1f26;border:1px solid var(--line);color:#c9d4e0;font-size:12px;line-height:24px;text-align:center}
 .xdel{position:absolute;right:7px;bottom:7px;width:26px;height:26px;border-radius:8px;padding:0;
   background:#2a1416;border:1px solid #5a2a2f;color:#e05b52;font-size:13px;line-height:24px;text-align:center}
 .small.trash{padding:2px 7px;font-size:13px}
@@ -776,7 +778,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v47`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v48`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -848,7 +850,7 @@ function renderRoute(){
     el.dataset.tt=p.tt;
     const inv=gInv(rows), tim=gTim(rows), pns=gPns(rows), oral=gOral(rows);
     const timLabel=p.kind==="km"?("ТИМ "+(p.tim||"КМ")):"ТИМ КСО";
-    el.innerHTML=`<button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
+    el.innerHTML=`<button class="vdel" data-void="${idx0(idxs)}" title="Удалить визит — обнулить отметки">🗑</button><button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
         <div class="t">${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
@@ -883,7 +885,6 @@ function renderRoute(){
         </div>
       </div>
       <div class="arrowbox">
-        <button class="small trash" data-void="${idx0(idxs)}" title="Удалить визит (обнулить)">🗑</button>
         <button class="small" data-up="${idx0(idxs)}" ${(pos===0||isDone||running)?"disabled style=opacity:.25":""}>↑</button>
         <button class="small" data-down="${idx0(idxs)}" ${(pos===groups.length-1||isDone||running)?"disabled style=opacity:.25":""}>↓</button>
       </div>
