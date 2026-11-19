@@ -1,4 +1,4 @@
-const CACHE="moi-day-v26";
+const CACHE="moi-day-v27";
 const ASSETS=["./index.html","./manifest.json","./icon.svg"];
 
 self.addEventListener("install",e=>{
