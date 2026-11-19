@@ -88,6 +88,9 @@ header{position:relative}
 #mapwrap.on{display:flex}
 #mapbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
 #map{flex:1;min-height:0}
+.projline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0}
+.pname{font-size:12.5px;color:#9fb0c4;min-width:96px}
+.ptime{font-size:12.5px;color:#8fc0ff}
 .shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
 .sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
@@ -444,7 +447,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v31`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v32`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -507,9 +510,17 @@ function renderRoute(){
           ${oral!==null?`<button class="chk ${oral?"on":""}" data-oral="${idx0(idxs)}">Oral</button>`:""}
         </div>
         <div class="chkline">
-          ${!p.start?`<button class="primary small" data-start="${idx0(idxs)}">Начало визита</button>`:""}
-          ${running?`<button class="ok small" data-end="${idx0(idxs)}">Закончила визит</button>`:""}
-          ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">перезасечь</button><button class="small" data-undone="${idx0(idxs)}">вернуть в работу</button>`:""}
+          ${rows.length>1?`${rows.map((x,ix)=>{
+              const nm=projShort(x.proj);
+              const t=x.start?`<span class="ptime">${fmtHM(x.start)}${x.end?"–"+fmtHM(x.end)+" · "+fmtDur(durMin(x.start,x.end)):" · идёт "+(x.start?fmtDur(durMin(x.start,new Date().toISOString())):"")}</span>`:"";
+              const btn=!x.start?`<button class="primary small" data-pstart="${idxs[ix]}">${nm} — начать</button>`
+                :(!x.end?`<button class="ok small" data-pend="${idxs[ix]}">${nm} — закончила</button>`
+                :`<button class="small" data-pstart="${idxs[ix]}">${nm} — ещё раз</button>`);
+              return `<div class="projline"><span class="pname">${nm}</span>${t}${btn}</div>`;
+            }).join("")}`:`
+            ${!p.start?`<button class="primary small" data-start="${idx0(idxs)}">Начало визита</button>`:""}
+            ${running?`<button class="ok small" data-end="${idx0(idxs)}">Закончила визит</button>`:""}
+            ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">ещё раз</button>`:""}`}
           ${rows.some(x=>x.kind!=="none")?`<button class="small" data-rep="${idx0(idxs)}">Отчёт</button>`:""}
           <button class="small" data-cmt="${idx0(idxs)}">${rows[0].comment?"Комментарий ✓":"Комментарий"}</button>
         </div>
@@ -543,6 +554,8 @@ function renderRoute(){
   wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.tim);const w=gRows(g).filter(p=>p.kind!=="none");const v=!w.every(p=>p.timDone);w.forEach(p=>p.timDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
+  wrap.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pend];p.end=new Date().toISOString();p.done=true;save();renderRoute()});
   wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.start));g.forEach(p=>{p.start=new Date().toISOString();p.end=null});save();renderRoute()});
   wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.end));const now=new Date().toISOString();g.forEach(p=>{p.end=now;p.done=true});save();renderRoute()});
   wrap.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.restart));g.forEach(p=>{p.start=new Date().toISOString();p.end=null;p.done=false});save();renderRoute()});
