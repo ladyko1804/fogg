@@ -273,6 +273,7 @@ function groupRows(list){
   return [...map.values()];
 }
 function gDone(rows){return rows.every(p=>p.done)}
+function endOf(g){const e=g.rows.map(p=>p.end).filter(Boolean).map(x=>new Date(x).getTime());return e.length?Math.max(...e):0}
 function gInv(rows){const w=rows.filter(p=>p.inv);return w.length?w.every(p=>p.invDone):null}
 function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.every(p=>p.timDone):null}
 function gPns(rows){const w=rows.filter(p=>p.kind==="km");return w.length?w.every(p=>p.pnDone):null}
@@ -281,7 +282,7 @@ function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("
 function renderRoute(){
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v16`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v17`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -291,23 +292,23 @@ function renderRoute(){
   fbar.innerHTML=`<span class="chip2 ${!f.lvl?"sel":""}" data-fl="">Все</span>`+
     ["Золото","Серебро","Медь","Железо"].map(l=>`<span class="chip2 ${f.lvl===l?"sel":""}" data-fl="${l}">${l}</span>`).join("")+
     `<span class="chip2 ${f.inv?"sel":""}" data-fi="1">Инвент</span>`+
-    `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ</span>`+
-    `<span class="chip2 ${f.time?"sel":""}" data-fm="1">По времени</span>`;
+    `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ</span>`;
   wrap.appendChild(fbar);
   fbar.querySelectorAll("[data-fl]").forEach(c=>c.onclick=()=>{f.lvl=c.dataset.fl||null;save();renderRoute()});
   fbar.querySelectorAll("[data-fi]").forEach(c=>c.onclick=()=>{f.inv=!f.inv;save();renderRoute()});
   fbar.querySelectorAll("[data-ft]").forEach(c=>c.onclick=()=>{f.tim=!f.tim;save();renderRoute()});
-  fbar.querySelectorAll("[data-fm]").forEach(c=>c.onclick=()=>{f.time=!f.time;save();renderRoute()});
 
   let groups=groupRows(all).map(idxs=>({idxs,rows:idxs.map(i=>all[i])}));
   if(f.lvl)groups=groups.filter(g=>g.rows.some(p=>p.lvl===f.lvl));
   if(f.inv)groups=groups.filter(g=>{const w=g.rows.filter(p=>p.inv);return w.length&&!w.every(p=>p.invDone)});
   if(f.tim)groups=groups.filter(g=>{const w=g.rows.filter(p=>p.kind!=="none");return w.length&&!w.every(p=>p.timDone)});
-  if(f.time){
-    const t0=g=>{const st=g.rows.map(p=>p.start).filter(Boolean).map(x=>new Date(x).getTime());return st.length?Math.min(...st):null};
-    const started=groups.filter(g=>t0(g)!==null).sort((a,b)=>t0(a)-t0(b));
-    const rest=groups.filter(g=>t0(g)===null);
-    groups=started.concat(rest);
+  /* авто-раскладка: идущий визит — первым, закрытые — внизу, остальное в твоём порядке */
+  {
+    const runningG=groups.filter(g=>g.rows.some(p=>p.start&&!p.end));
+    const doneG=groups.filter(g=>!g.rows.some(p=>p.start&&!p.end)&&gDone(g.rows))
+      .sort((a,b)=>endOf(a)-endOf(b));
+    const pendingG=groups.filter(g=>!runningG.includes(g)&&!doneG.includes(g));
+    groups=runningG.concat(pendingG,doneG);
   }
   if(!groups.length){const e=document.createElement("div");e.className="card";e.innerHTML='<div class="hint">Под этот фильтр ничего нет</div>';wrap.appendChild(e)}
 
@@ -343,8 +344,8 @@ function renderRoute(){
         </div>
       </div>
       <div class="arrowbox">
-        <button class="small" data-up="${idx0(idxs)}" ${(pos===0||f.time)?"disabled style=opacity:.25":""}>↑</button>
-        <button class="small" data-down="${idx0(idxs)}" ${(pos===groups.length-1||f.time)?"disabled style=opacity:.25":""}>↓</button>
+        <button class="small" data-up="${idx0(idxs)}" ${(pos===0||isDone||running)?"disabled style=opacity:.25":""}>↑</button>
+        <button class="small" data-down="${idx0(idxs)}" ${(pos===groups.length-1||isDone||running)?"disabled style=opacity:.25":""}>↓</button>
       </div>
     </div>`;
     wrap.appendChild(el);
