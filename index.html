@@ -755,16 +755,24 @@ let optFrom=null;
 function showInfo(i){
   const p=pts(state.active)[+i]; const b=baseOf(p.tt)||{};
   document.getElementById("inf-who").textContent=(p.net||"")+" · "+p.addr;
-  const rows=[];
-  if(p.hours&&p.hours!=="—")rows.push("<b>Часы:</b> "+p.hours);
-  if(p.lvl&&p.lvl!=="—")rows.push("<b>Уровень:</b> "+p.lvl);
-  if(p.prio)rows.push("<b>Приоритет:</b> "+p.prio);
-  if(p.tim&&p.tim!=="—")rows.push("<b>ТИМ:</b> "+p.tim);
-  if(p.inv)rows.push("<b>Инвентаризация:</b> нужна");
-  if(p.ir)rows.push("<b>IR:</b> нужен");
-  const note=p.note||b.c;
-  const body=(note?"<div style='margin-bottom:8px;color:#e8c07d'>"+esc(note)+"</div>":"")+
-    (rows.length?rows.join("<br>"):"<span style='color:#7c8b9c'>Пометок нет</span>");
+  const note=p.note||b.c||"";
+  let dir=b.dir||"";
+  if(!dir&&note){const m=note.match(/((?:Дир|Админ|ЛПР)[^.]*\.)/i); if(m)dir=m[1].trim();}
+  const val=v=>(v&&String(v).trim()?String(v):"—");
+  const rows=[
+    ["Часы работы", val(p.hours!=="—"?p.hours:(b.h||""))],
+    ["Уровень", val(p.lvl!=="—"?p.lvl:(b.l||""))],
+    ["Приоритет", val(p.prio||b.p||"")],
+    ["Директор / админ", val(dir)],
+    ["Печать ценников", val(b.pp||"")],
+    ["Боксы", val(b.bx||"")],
+    ["КСО", val(b.ks||"")],
+    ["КСО с боксами", val(b.kb||"")],
+    ["Где товар", val(b.st||"")],
+    ["Отмечаться", val(b.ck||"")]
+  ];
+  const body="<div>"+rows.map(([k,v])=>`<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#8b9aab;min-width:132px">${k}:</span><span>${esc(v)}</span></div>`).join("")+"</div>"
+    +(note?`<div style="margin-top:10px;color:#e8c07d;font-size:13px">${esc(note)}</div>`:"");
   document.getElementById("inf-body").innerHTML=body;
   document.getElementById("infwrap").classList.add("on");
 }
@@ -909,7 +917,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v55`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v56`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
