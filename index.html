@@ -380,7 +380,7 @@ function drawMap(){
     const ph=/Аптека/i.test(p.net||""), inv=p.inv;
     const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${ph?"ph":""} ${inv?"iv":""}">${i+1}${inv?"<i>И</i>":""}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
     L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
-      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}<br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Открыть в Яндекс.Навигаторе</a>`);
+      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}<br><a href="yandexnavi://build_route_on_map?lat_to=${p.la}&lon_to=${p.lo}">Навигатор — от меня</a> · <a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
@@ -388,7 +388,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v28`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v29`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
