@@ -56,6 +56,7 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .lvl.iron{color:#9fb6cc;border-color:#3b5064;background:#1c2630}
 .lvl.other{color:#93a1b0;border-color:#333c46}
 .addr{font-size:14px;color:#c3d0dd;margin-top:3px}
+.card.moved{border-color:#2f6fbf;box-shadow:0 0 0 2px rgba(68,147,248,.35)}
 .card.active{border-color:#7a3a44;background:#1d161a;box-shadow:inset 0 0 0 1px #53242c}
 .num.run{background:#8c3b46;color:#fff}
 .filters{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
@@ -280,7 +281,7 @@ function projShort(x){return String(x||"").replace("Oral Care","Oral").replace("
 function renderRoute(){
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v14`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v15`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -309,7 +310,8 @@ function renderRoute(){
     const total=(rows.reduce((a,x)=>a+(x.t||0),0))||null;
     const projs=rows.map(x=>`${projShort(x.proj)}${x.t?` ${x.t} мин`:""}`).join(" · ");
     const el=document.createElement("div");
-    el.className="card"+(running?" active":"");
+    el.className="card"+(running?" active":"")+(state.movedTt&&String(p.tt)===String(state.movedTt)?" moved":"");
+    el.dataset.tt=p.tt;
     const inv=gInv(rows), tim=gTim(rows), pns=gPns(rows), oral=gOral(rows);
     const timLabel=p.kind==="km"?("ТИМ "+(p.tim||"КМ")):"ТИМ КСО";
     el.innerHTML=`<div class="row">
@@ -364,7 +366,12 @@ function moveGroup(idxs,dir){
   else{const next=list[idxs[idxs.length-1]+1];pos=rest.indexOf(next);if(pos>=0)pos+=1}
   if(pos<0)pos=dir<0?0:rest.length;
   state.days[state.active]=rest.slice(0,pos).concat(block,rest.slice(pos));
+  state.movedTt=block[0]?String(block[0].tt):null;
   save();renderRoute();
+  const el=document.querySelector(`.card[data-tt="${state.movedTt}"]`);
+  if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
+  clearTimeout(window.__movedTimer);
+  window.__movedTimer=setTimeout(()=>{state.movedTt=null;renderRoute()},2500);
 }
 
 function go(t){document.querySelector(`nav a[data-tab="${t}"]`).click()}
