@@ -95,12 +95,15 @@ header{position:relative}
 .shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
 .sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
+#rptwrap{position:fixed;inset:0;background:#000b;z-index:85;display:none;align-items:center;justify-content:center;padding:16px}
+#rptwrap.on{display:flex}
 #cmtwrap{position:fixed;inset:0;background:#000b;z-index:80;display:none;align-items:center;justify-content:center;padding:16px}
 #cmtwrap.on{display:flex}
 .cmtbox{width:100%;max-width:520px;background:#141a21;border:1px solid var(--line);border-radius:14px;padding:14px}
 .cmthead{font-size:13.5px;color:#9fb0c4;margin-bottom:8px}
 #cmt-text{width:100%;min-height:120px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:10px;padding:10px;font:14px/1.45 system-ui;resize:vertical}
 .cmtfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.small.sent{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6}
 .meta.cmt{color:#e8c07d;white-space:pre-wrap}
 .pin{width:28px;height:28px;border-radius:50%;background:#f1c40f;color:#241f10;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .pin.dn{background:#2e7d32}
@@ -118,6 +121,8 @@ header{position:relative}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 document.getElementById("btn-map").onclick=openMap;
 document.getElementById("cmt-ok").onclick=saveCmt;
+document.getElementById("rpt-send").onclick=sendRpt;
+document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwrap").classList.remove("on");
 document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
 document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
@@ -128,6 +133,16 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="sub" id="h-sub">—</div>
   <button id="btn-map" title="Карта точек">Карта</button>
 </header>
+
+<div id="rptwrap">
+  <div class="cmtbox">
+    <div class="cmthead">Отчёт · <span id="rpt-who"></span></div>
+    <div class="chips" id="rpt-res"></div>
+    <div id="rpt-shwrap"><label>Полок на КСО</label><input id="rpt-sh" type="number" min="1" max="10" inputmode="numeric" placeholder="например 3"></div>
+    <div class="cmtfoot"><button id="rpt-send" class="primary small">Отправить</button><button id="rpt-cancel" class="small">Отмена</button></div>
+    <div class="hint" id="rpt-status"></div>
+  </div>
+</div>
 
 <div id="cmtwrap">
   <div class="cmtbox">
@@ -384,6 +399,56 @@ function mapPoints(){
 }
 let mapObj=null;
 
+
+let rptIdx=null,rptRes=null;
+function openRpt(i){
+  rptIdx=+i; const list=pts(state.active); const p=list[rptIdx];
+  if(list.filter(x=>String(x.tt)===String(p.tt)).some(x=>x.sent)){
+    alert("Отчёт по этому магазину уже отправлен. Второй раз не отправляю.");return;
+  }
+  document.getElementById("rpt-who").textContent=(p.net||"")+" · "+p.addr+" · "+p.tt;
+  rptRes=null;
+  const host=document.getElementById("rpt-res");host.innerHTML="";
+  RESULTS.forEach(r=>{
+    const c=document.createElement("div");c.className="chip";c.textContent=r.replace("Не выполнено ","нет: ");
+    c.onclick=()=>{rptRes=r;[...host.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
+      document.getElementById("rpt-shwrap").style.display=(r==="Выполнено"&&p.kind==="dk")?"block":"none";};
+    host.appendChild(c);
+  });
+  document.getElementById("rpt-sh").value="";
+  document.getElementById("rpt-shwrap").style.display="none";
+  document.getElementById("rpt-status").textContent="";
+  document.getElementById("rptwrap").classList.add("on");
+}
+async function sendRpt(){
+  const st=document.getElementById("rpt-status");
+  const list=pts(state.active), p=list[rptIdx];
+  if(!rptRes){st.innerHTML='<span class="warn">Выбери результат</span>';return}
+  const pf=prof();
+  if(!pf.name||!pf.sv){st.innerHTML='<span class="warn">Заполни ФИО МЧ и ФИО СВ во вкладке «Профиль»</span>';return}
+  const base={[E.name]:pf.name,[E.sv]:pf.sv,[E.tt]:p.tt,[E.date]:state.active};
+  const jobs=[];
+  if(p.kind==="dk"){
+    const sh=document.getElementById("rpt-sh").value;
+    const d={...base,[E.tim]:"Магнит ММ  Выкладка на КСО",[E.project]:"Gillette OSA",[E.result]:rptRes};
+    if(sh&&rptRes==="Выполнено")d[E.shelves]=sh;
+    jobs.push(d);
+  }else{
+    jobs.push({...base,[E.tim]:"МК Платина-Золото-Серебро",[E.project]:"Gillette",[E.result]:rptRes});
+    jobs.push({...base,[E.tim]:"МК Подарочные наборы",[E.project]:"Gillette",[E.result]:rptRes});
+  }
+  st.textContent="Отправляю…";
+  try{
+    for(const d of jobs) await postForm(d);
+    const log=sentLog();
+    log.push({at:new Date().toISOString(),date:state.active,tt:p.tt,addr:p.addr,tims:jobs.map(j=>j[E.tim]),results:jobs.map(j=>j[E.result])});
+    localStorage.setItem("moi-sent",JSON.stringify(log));
+    list.forEach(x=>{if(String(x.tt)===String(p.tt))x.sent=true});
+    save();
+    st.innerHTML='<span class="ok">Отправлено</span>';
+    setTimeout(()=>{document.getElementById("rptwrap").classList.remove("on");renderRoute()},600);
+  }catch(e){ st.innerHTML='<span class="bad">Не ушло: '+e.message+'</span>'; }
+}
 let cmtIdx=null;
 function dayText(){
   const all=pts(state.active), seen=new Set(), out=[];
@@ -448,7 +513,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v33`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v34`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -522,8 +587,8 @@ function renderRoute(){
             <span class="pt">${p.t?p.t+" мин":""}</span>${!p.start?`<button class="primary small" data-start="${idx0(idxs)}">Начало визита</button>`:""}
             ${running?`<button class="ok small" data-end="${idx0(idxs)}">Закончила визит</button>`:""}
             ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">ещё раз</button>`:""}`}
-          ${rows.some(x=>x.kind!=="none")?`<button class="small" data-rep="${idx0(idxs)}">Отчёт</button>`:""}
           <button class="small" data-cmt="${idx0(idxs)}">${rows[0].comment?"Комментарий ✓":"Комментарий"}</button>
+          ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         </div>
       </div>
       <div class="arrowbox">
@@ -549,6 +614,7 @@ function renderRoute(){
   }
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
+  wrap.querySelectorAll("[data-rpt]").forEach(b=>b.onclick=()=>openRpt(b.dataset.rpt));
   wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{const g=rowsOf(b.dataset.inv);const v=!gRows(g).every(p=>p.invDone);gRows(g).forEach(p=>{if(p.inv)p.invDone=v});save();renderRoute()});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
@@ -718,6 +784,8 @@ if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch
 
 document.getElementById("btn-map").onclick=openMap;
 document.getElementById("cmt-ok").onclick=saveCmt;
+document.getElementById("rpt-send").onclick=sendRpt;
+document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwrap").classList.remove("on");
 document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
 document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
