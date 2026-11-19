@@ -94,6 +94,7 @@ header{position:relative}
 .ptime{font-size:12.5px;color:#8fc0ff}
 .shelves{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#93a7bd;margin-left:2px}
 .sbtn{width:26px;height:26px;border-radius:8px;padding:0;font-size:12.5px;background:#12171d;border:1px solid var(--line);color:#cfd8e3}
+.small.del{background:#2a1416;border-color:#5a2a2f;color:#e08a86}
 .chk.no{background:#3a1d20;border-color:#6b2a2f;color:#ff9a94}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
 #invwrap{position:fixed;inset:0;background:#000b;z-index:86;display:none;align-items:center;justify-content:center;padding:16px}
@@ -579,7 +580,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v38`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v39`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
@@ -658,6 +659,7 @@ function renderRoute(){
             ${p.start&&p.end?`<button class="small" data-restart="${idx0(idxs)}">ещё раз</button>`:""}`}
           <button class="small" data-cmt="${idx0(idxs)}">${rows[0].comment?"Комментарий ✓":"Комментарий"}</button>
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
+          <button class="small del" data-del="${idx0(idxs)}">Удалить</button>
         </div>
       </div>
       <div class="arrowbox">
@@ -683,6 +685,13 @@ function renderRoute(){
   }
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
+  wrap.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    const g=rowsOf(b.dataset.del), tt=String(gRows(g)[0].tt);
+    const nm=gRows(g)[0].net+" "+gRows(g)[0].addr;
+    if(!confirm("Удалить из маршрута: "+nm+"?"))return;
+    state.days[state.active]=pts(state.active).filter(x=>String(x.tt)!==tt);
+    state.keepTt=null; save(); renderRoute();
+  });
   wrap.querySelectorAll("[data-rpt]").forEach(b=>b.onclick=()=>openRpt(b.dataset.rpt));
   wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
