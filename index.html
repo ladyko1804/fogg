@@ -801,63 +801,20 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v49`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v50`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
 
-  const f=state.filter=state.filter||{};
-  const fbar=document.createElement("div");fbar.className="filters";
-  const nets=[...new Set(all.map(p=>p.net).filter(Boolean))].sort();
-  const prios=[...new Set(all.map(p=>p.prio).filter(Boolean))].sort();
-  const sel=(name,opts,val)=>`<select data-f="${name}"><option value="">${name}</option>`+
-    (val?`<option value="${val}" selected>${val}</option>`:"")+
-    opts.filter(o=>o!==val).map(o=>`<option value="${o}">${o}</option>`).join("")+`</select>`;
-  fbar.innerHTML=
-    sel("Сеть",nets,f.net)+
-    sel("Приоритет",prios,f.prio)+
-    sel("Уровень",["Золото","Серебро","Медь","Железо"],f.lvl)+
-    `<select data-f="Часы"><option value="">Время работы</option>`+
-      [["24","Круглосуточно"],["20","закрывается до 20:00"],["21","до 21:00"],["22","до 22:00"],["23","до 23:00"]]
-        .map(([v,t])=>`<option value="${v}"${f.hours===v?" selected":""}>${t}</option>`).join("")+
-    `</select>`+
-    `<span class="chip2 ${f.time?"sel":""}" data-fm="1">По времени</span>`+
-    `<span class="chip2 ${f.inv?"sel":""}" data-fi="1">Инвент</span>`+
-    `<span class="chip2 ${f.tim?"sel":""}" data-ft="1">ТИМ</span>`;
-  wrap.appendChild(fbar);
-  fbar.querySelectorAll("select").forEach(selx=>selx.onchange=()=>{
-    state.keepTt=null;
-    const k=selx.dataset.f, v=selx.value||null;
-    if(k==="Сеть")f.net=v; else if(k==="Приоритет")f.prio=v;
-    else if(k==="Уровень")f.lvl=v; else if(k==="Часы")f.hours=v;
-    save(); renderRoute();
-  });
-  fbar.querySelectorAll("[data-fi]").forEach(c=>c.onclick=()=>{state.keepTt=null;f.inv=!f.inv;save();renderRoute()});
-  fbar.querySelectorAll("[data-ft]").forEach(c=>c.onclick=()=>{state.keepTt=null;f.tim=!f.tim;save();renderRoute()});
-  fbar.querySelectorAll("[data-fm]").forEach(c=>c.onclick=()=>{state.keepTt=null;f.time=!f.time;save();renderRoute()});
-
   let groups=groupRows(all).map(idxs=>({idxs,rows:idxs.map(i=>all[i])}));
   const keep=state.keepTt?String(state.keepTt):null;
-  const closHour=h=>{const t=String(h||"");if(/круглосут/i.test(t))return 24;
-    const m=t.match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/);return m?+m[3]:null};
   const isKeep=g=>keep&&String(g.rows[0].tt)===keep;
-  if(f.net)groups=groups.filter(g=>isKeep(g)||g.rows.some(p=>p.net===f.net));
-  if(f.prio)groups=groups.filter(g=>isKeep(g)||g.rows.some(p=>p.prio===f.prio));
-  if(f.hours)groups=groups.filter(g=>{const h=closHour(g.rows[0].hours);if(h===null)return false;
-    return f.hours==="24"?h===24:h<=+f.hours});
-  if(f.lvl)groups=groups.filter(g=>isKeep(g)||g.rows.some(p=>p.lvl===f.lvl));
-  if(f.inv)groups=groups.filter(g=>isKeep(g)||(()=>{const w=g.rows.filter(p=>p.inv);return w.length&&!w.every(p=>p.invDone)})());
-  if(f.tim)groups=groups.filter(g=>isKeep(g)||(()=>{const w=g.rows.filter(p=>p.kind!=="none");return w.length&&!w.every(p=>p.timDone)})());
   /* авто-раскладка: идущий визит — первым, закрытые — внизу, остальное в твоём порядке */
   {
     const runningG=groups.filter(g=>g.rows.some(p=>p.start&&!p.end));
     const doneG=groups.filter(g=>!isKeep(g)&&!g.rows.some(p=>p.start&&!p.end)&&gDone(g.rows))
       .sort((a,b)=>endOf(a)-endOf(b));
     let pendingG=groups.filter(g=>!runningG.includes(g)&&!doneG.includes(g));
-    if(f.time){
-      const leftOf=g=>{const ci=closeInfo(g.rows[0].hours);return ci?ci.left:1e12};
-      pendingG=pendingG.slice().sort((a,b)=>leftOf(a)-leftOf(b));
-    }
     groups=runningG.concat(pendingG,doneG);
   }
   if(!groups.length){const e=document.createElement("div");e.className="card";e.innerHTML='<div class="hint">Под этот фильтр ничего нет</div>';wrap.appendChild(e)}
@@ -878,7 +835,7 @@ function renderRoute(){
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
         <div class="t">${netBadge(p.net)}${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
-        <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}${f.time&&!isDone?`${closeInfo(p.hours)?` <span class="${closeInfo(p.hours).closed?"bad":"warn"}" style="font-size:12.5px">${closeInfo(p.hours).label}</span>`:""}`:""}</div>
+        <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
         <div class="meta">${[rows[0].shelves?"полок: "+rows[0].shelves:"",p.note||""].filter(Boolean).join(" · ")}</div>
         ${rows[0].comment?`<div class="meta cmt">💬 ${esc(rows[0].comment)}</div>`:""}
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
