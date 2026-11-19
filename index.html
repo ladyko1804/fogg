@@ -486,6 +486,16 @@ function saveCmt(){
   list.forEach(x=>{if(String(x.tt)===String(p.tt))x.comment=t||null});
   save(); document.getElementById("cmtwrap").classList.remove("on"); renderRoute();
 }
+function gotoCard(tt){
+  document.getElementById("mapwrap").classList.remove("on");
+  state.keepTt=String(tt);
+  renderRoute();
+  setTimeout(()=>{
+    const el=document.querySelector(`[data-tt="${tt}"]`);
+    if(el){ el.classList.add("moved"); el.scrollIntoView({behavior:"smooth",block:"center"});
+      setTimeout(()=>el.classList.remove("moved"),2500); }
+  },80);
+}
 function openMap(){
   if(typeof L==="undefined"){alert("Карта не загрузилась — нужен интернет");return}
   document.getElementById("mapwrap").classList.add("on");
@@ -505,7 +515,7 @@ function drawMap(){
     const ph=/Аптека/i.test(p.net||""), inv=p.inv;
     const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${ph?"ph":""} ${inv?"iv":""}">${i+1}${inv?"<i>И</i>":""}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
     L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
-      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}<br><a href="yandexnavi://build_route_on_map?lat_to=${p.la}&lon_to=${p.lo}">Навигатор — от меня</a> · <a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
+      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}<br><a href="#" onclick="gotoCard('${p.tt}');return false" style="display:inline-block;margin:2px 0 6px;padding:5px 10px;background:#1d2b3d;border:1px solid #32506f;border-radius:8px;color:#cfe3ff;text-decoration:none">Открыть карточку</a><br><a href="yandexnavi://build_route_on_map?lat_to=${p.la}&lon_to=${p.lo}">Навигатор — от меня</a> · <a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
@@ -513,7 +523,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v36`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invDone)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v37`;
   const wrap=document.getElementById("s-route");
   if(!all.length){wrap.innerHTML='<div class="card"><div class="hint">На этот день маршрута нет. Пришли выгрузку — добавлю точки.</div></div>';return}
   wrap.innerHTML="";
