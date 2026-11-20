@@ -515,7 +515,7 @@ function netBadge(net){
   else if(/Косметик|КМ/i.test(n)){bg="#c2185b";fg="#fff";l="М"}
   else if(/Магнит/i.test(n)){bg="#c62828";fg="#fff";l="М"}
   else if(/Перекр/i.test(n)){bg="#2e7d32";fg="#fff";l="Х"}
-  else if(/Верный/i.test(n)){bg="#1565c0";fg="#fff";l="В"}
+  else if(/Верный/i.test(n)){bg="#1b7f3a";fg="#e53935";l="В"}
   else if(/Подружка/i.test(n)){bg="#ad1457";fg="#fff";l="П"}
   else if(/РивГош/i.test(n)){bg="#6a1b9a";fg="#fff";l="Р"}
   else if(/МВидео/i.test(n)){bg="#fbc02d";fg="#241f10";l="М"}
@@ -920,7 +920,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v72`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v73`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
