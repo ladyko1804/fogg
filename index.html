@@ -118,6 +118,7 @@ header{position:relative}
   background:#2a1416;border:1px solid #5a2a2f;color:#e05b52;font-size:13px;line-height:24px;text-align:center}
 .small.trash{padding:2px 7px;font-size:13px}
 .small.del{background:#2a1416;border-color:#5a2a2f;color:#e08a86}
+.chk:disabled{opacity:.42;filter:grayscale(.4)}
 .chk.no{background:#3a1d20;border-color:#6b2a2f;color:#ff9a94}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
 #infwrap{position:fixed;inset:0;background:#000b;z-index:90;display:none;align-items:center;justify-content:center;padding:16px}
@@ -915,7 +916,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v65`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v66`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -948,6 +949,7 @@ function renderRoute(){
     el.className="card"+(running?" active":"")+(state.movedTt&&String(p.tt)===String(state.movedTt)?" moved":"");
     el.dataset.tt=p.tt;
     const inv=gInv(rows), tim=gTim(rows), pns=gPns(rows), oral=gOral(rows);
+    const started=rows.some(x=>x.start);
     const timLabel=p.kind==="km"?("ТИМ "+(p.tim||"КМ")):"ТИМ КСО";
     el.innerHTML=`<button class="ibtn top" data-info="${idx0(idxs)}" title="Информация о магазине">i</button><button class="vdel" data-void="${idx0(idxs)}" title="Удалить визит — обнулить отметки">🗑</button><button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
@@ -959,13 +961,13 @@ function renderRoute(){
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
-            return `<button class="chk ${dn?"on":(cl?"no":"")}" data-inv="${idx0(idxs)}">${dn?"Инвент ✓":(cl?"Инвент: нет":"Инвент")}</button>`;})():""}
+            return `<button class="chk ${dn?"on":(cl?"no":"")}" ${started?"":"disabled"} data-inv="${idx0(idxs)}">${dn?"Инвент ✓":(cl?"Инвент: нет":"Инвент")}</button>`;})():""}
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
             const sh=rows.find(x=>x.shelves&&x.shelves>0);
-            return `<button class="chk ${dn?"on":(mk?"no":"")}" data-tim="${idx0(idxs)}">${dn?timLabel+" ✓"+(sh?": "+sh.shelves:""):(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
-          ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" data-ir="${idx0(idxs)}">IR</button>`:""}
-          ${pns!==null?`<button class="chk ${pns?"on":""}" data-pn="${idx0(idxs)}">ПН</button>`:""}
-          ${oral!==null?`<button class="chk ${oral?"on":""}" data-oral="${idx0(idxs)}">Oral</button>`:""}
+            return `<button class="chk ${dn?"on":(mk?"no":"")}" ${started?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" ✓"+(sh?": "+sh.shelves:""):(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
+          ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" ${started?"":"disabled"} data-ir="${idx0(idxs)}">IR</button>`:""}
+          ${pns!==null?`<button class="chk ${pns?"on":""}" ${started?"":"disabled"} data-pn="${idx0(idxs)}">ПН</button>`:""}
+          ${oral!==null?`<button class="chk ${oral?"on":""}" ${started?"":"disabled"} data-oral="${idx0(idxs)}">Oral</button>`:""}
         </div>
         <div class="chkline">
           ${rows.map((x,ix)=>{
