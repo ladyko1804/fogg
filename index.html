@@ -106,8 +106,6 @@ header{position:relative}
   font:700 11px/1 system-ui;margin-right:7px;vertical-align:middle;flex:0 0 auto}
 .donehead{display:flex;justify-content:space-between;align-items:center;background:#141a21;border:1px solid var(--line);
   border-radius:12px;padding:12px 14px;margin:10px 0 6px;font-weight:600;font-size:14px;color:#b8c6d6}
-.card.invneed{border-color:#d35400;box-shadow:0 0 0 1px #d35400 inset}
-.card.invneed .num{background:#3a2213;color:#ffb27a}
 .card.dim{opacity:.72}
 .card.dim .t{font-size:14px;font-weight:600;font-style:italic}
 .card.dim .addr{font-size:12.5px;font-style:italic}
@@ -144,12 +142,12 @@ header{position:relative}
 .pin{width:28px;height:28px;border-radius:50%;background:#f1c40f;color:#241f10;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .pin.dn{background:#77828f}
 .pin.ph{background:#7b1fa2}
-.pin.iv{box-shadow:0 0 0 3px #e67e22,0 1px 5px #000a;position:relative}
+.pin.iv{background:#c0392b;color:#fff;box-shadow:0 1px 5px #000a;position:relative}
 .pin.iv i{position:absolute;right:-6px;top:-6px;width:14px;height:14px;border-radius:50%;background:#e67e22;color:#1a1f26;font:700 9px/14px system-ui;font-style:normal}
 .legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 14px;font-size:11.5px;color:#9fb0c4;border-bottom:1px solid var(--line)}
 .legend b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
 .legend .l-red{background:#f1c40f}.legend .l-grn{background:#77828f}.legend .l-ph{background:#7b1fa2}
-.legend .l-inv{background:#f1c40f;box-shadow:0 0 0 2px #e67e22}
+.legend .l-inv{background:#c0392b}
 .leaflet-popup-content{font-size:13px;line-height:1.45}
 .leaflet-popup-content a{color:#32506f}
 </style>
@@ -267,7 +265,7 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
 
 <div id="mapwrap">
   <div id="mapbar"><b>Точки на карте</b><button id="map-close">Закрыть</button></div>
-  <div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>закрыт (серый)</span><span><b class="l-inv"></b>инвентаризация</span><span><b class="l-ph"></b>аптека</span></div>
+  <div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>закрыт (серый)</span><span><b class="l-inv"></b>нужен инвент</span><span><b class="l-ph"></b>аптека</span></div>
   <div id="map"></div>
 </div>
 
@@ -919,7 +917,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v57`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v58`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -951,8 +949,6 @@ function renderRoute(){
     const el=document.createElement("div");
     el.className="card"+(running?" active":"")+(state.movedTt&&String(p.tt)===String(state.movedTt)?" moved":"");
     el.dataset.tt=p.tt;
-    const invOpen=rows.some(x=>x.inv)&&!rows.filter(x=>x.inv).every(x=>x.invClosed);
-    if(invOpen)el.classList.add("invneed");
     const inv=gInv(rows), tim=gTim(rows), pns=gPns(rows), oral=gOral(rows);
     const timLabel=p.kind==="km"?("ТИМ "+(p.tim||"КМ")):"ТИМ КСО";
     el.innerHTML=`<button class="vdel" data-void="${idx0(idxs)}" title="Удалить визит — обнулить отметки">🗑</button><button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
