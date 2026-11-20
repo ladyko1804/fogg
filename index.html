@@ -910,6 +910,17 @@ function drawMap(){
   if(!mapObj)return;
   mapObj.eachLayer(l=>{ if(l instanceof L.Marker || l instanceof L.Polyline) mapObj.removeLayer(l) });
   const ps=mapPoints(); if(!ps.length){mapObj.setView([60.005,30.40],12);return}
+  // развести совпадающие точки по маленькому кругу, чтобы не наслаивались
+  {
+    const by={};
+    ps.forEach((p,i)=>{const k=p.la.toFixed(5)+","+p.lo.toFixed(5);(by[k]=by[k]||[]).push(i)});
+    Object.values(by).forEach(idxs=>{
+      if(idxs.length<2)return;
+      const R=0.00040*(idxs.length>3?1.3:1);
+      idxs.forEach((idx,j)=>{const a=(2*Math.PI*j)/idxs.length;
+        ps[idx].la=ps[idx].la+Math.sin(a)*R; ps[idx].lo=ps[idx].lo+Math.cos(a)*R;});
+    });
+  }
   const ll=ps.map(p=>[p.la,p.lo]);
   L.polyline(ll,{color:"#4a7bb5",weight:4,opacity:.85}).addTo(mapObj);
   ps.forEach((p,i)=>{
@@ -924,7 +935,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v77`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v78`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
