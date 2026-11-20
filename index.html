@@ -76,6 +76,7 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .chk.on{background:#17301f;border-color:#2c5c3a;color:#8fe0a8;font-weight:500}
 .arrowbox{display:flex;flex-direction:column;gap:6px;margin-left:6px;align-self:center}
 .arrowbox button{padding:6px 9px;font-size:14px}
+.arrowbox .next{color:#8fc0ff;border-color:#32506f}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
 .cal .wd{text-align:center;font-size:11px;color:var(--dim);padding:2px 0}
 .day{border-radius:11px;background:#12171d;border:1px solid var(--line);padding:6px 2px;text-align:center;min-height:58px;cursor:pointer}
@@ -1004,7 +1005,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v84`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v85`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -1096,6 +1097,7 @@ function renderRoute(){
       <div class="arrowbox">
         <button class="small" data-up="${idx0(idxs)}" ${(pos===0||isDone||running)?"disabled style=opacity:.25":""}>↑</button>
         <button class="small" data-down="${idx0(idxs)}" ${(pos===groups.length-1||isDone||running)?"disabled style=opacity:.25":""}>↓</button>
+        <button class="small next" data-next="${idx0(idxs)}" title="Перенести на следующий день">→</button>
       </div>
     </div>`;
     if(isDone){el.classList.add("dim");doneEls.push(el);}
@@ -1129,6 +1131,16 @@ function renderRoute(){
   }
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
+  wrap.querySelectorAll("[data-next]").forEach(b=>b.onclick=()=>{
+    const g=rowsOf(b.dataset.next), rows=gRows(g), tt=String(rows[0].tt);
+    const nm=rows[0].net+" "+rows[0].addr;
+    if(!confirm("Перенести на следующий день?\n"+nm))return;
+    const d=new Date(state.active+"T12:00:00"); d.setDate(d.getDate()+1);
+    const nd=d.toISOString().slice(0,10);
+    state.days[state.active]=pts(state.active).filter(x=>String(x.tt)!==tt);
+    state.days[nd]=(state.days[nd]||[]).concat(rows.map(x=>({...x,done:false,start:null,end:null})));
+    state.keepTt=null; save(); renderRoute();
+  });
   wrap.querySelectorAll("[data-void]").forEach(b=>b.onclick=()=>{
     const g=rowsOf(b.dataset.void), nm=gRows(g)[0].net+" "+gRows(g)[0].addr;
     if(!confirm("Точно удалить визит?\n"+nm+"\nМагазин останется, отметки и время обнулятся."))return;
