@@ -96,7 +96,10 @@ header{position:relative}
 #mapwrap.on{display:flex}
 #mapbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
 #map{flex:1;min-height:0}
-.projline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0}
+.projline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:5px 0}
+.pname.fin{font-size:13px;color:#93a7bd}
+.pt2{font-size:13px;color:#8fc0ff;white-space:nowrap}
+.pt2.bad{color:#e05b52;font-weight:700}
 .pname{font-size:12.5px;color:#9fb0c4;min-width:96px}
 .pt{font-size:11.5px;color:#6f8299}
 .ptime{font-size:12.5px;color:#8fc0ff}
@@ -917,7 +920,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v68`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v70`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -973,11 +976,15 @@ function renderRoute(){
         <div class="chkline">
           ${rows.map((x,ix)=>{
               const nm=projShort(x.proj);
-              const t=x.start?`<span class="ptime">${fmtHM(x.start)}${x.end?"–"+fmtHM(x.end)+" · "+fmtDur(durMin(x.start,x.end)):" · идёт "+(x.start?fmtDur(durMin(x.start,new Date().toISOString())):"")}</span>`:"";
+              const plan=x.t||null;
+              let fact=null, over=false;
+              if(x.start&&x.end){fact=durMin(x.start,x.end);over=!!(plan&&fact>plan);}
+              else if(x.start){fact=durMin(x.start,new Date().toISOString());}
+              const tstr=plan?`${plan}${fact!==null?" / "+fact:""}`:(fact!==null?String(fact):"");
               const btn=!x.start?`<button class="primary small" data-pstart="${idxs[ix]}">${nm} — начать</button>`
                 :(!x.end?`<button class="ok small" data-pend="${idxs[ix]}">${nm} — закончила</button>`
-                :``);
-              return `<div class="projline"><span class="pname">${nm}</span><span class="pt">${x.t?x.t+" мин":""}</span>${t}${btn}</div>`;
+                :`<span class="pname fin">${nm}</span>`);
+              return `<div class="projline">${btn}<span class="pt2 ${over?"bad":""}">${tstr}</span></div>`;
             }).join("")}
           <button class="small cmtbtn ${rows[0].comment?"has":""}" data-cmt="${idx0(idxs)}" title="Комментарий">${rows[0].comment?"💬✓":"💬"}</button>${rows[0].comment?`<span class="cmttext">${esc(rows[0].comment)}</span>`:""}
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
