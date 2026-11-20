@@ -920,7 +920,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v71`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v72`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -929,9 +929,17 @@ function renderRoute(){
     return}
   wrap.innerHTML="";
 
+  const flt=state.filter=state.filter||{};
+  {
+    const bar=document.createElement("div");bar.className="filters";
+    bar.innerHTML=`<span class="chip2 ${flt.inv?"sel":""}" id="f-inv">Инвент${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return " "+d+"/"+t.length;})()}</span>`;
+    wrap.appendChild(bar);
+    bar.querySelector("#f-inv").onclick=()=>{flt.inv=!flt.inv;state.keepTt=null;save();renderRoute()};
+  }
   let groups=groupRows(all).map(idxs=>({idxs,rows:idxs.map(i=>all[i])}));
   const keep=state.keepTt?String(state.keepTt):null;
   const isKeep=g=>keep&&String(g.rows[0].tt)===keep;
+  if(state.filter&&state.filter.inv)groups=groups.filter(g=>g.rows.some(p=>p.inv)&&!g.rows.filter(p=>p.inv).every(p=>p.invClosed));
   /* авто-раскладка: идущий визит — первым, закрытые — внизу, остальное в твоём порядке */
   {
     const runningG=groups.filter(g=>g.rows.some(p=>p.start&&!p.end));
