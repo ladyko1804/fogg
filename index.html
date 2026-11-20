@@ -98,6 +98,7 @@ header{position:relative}
 #map{flex:1;min-height:0}
 .projline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:5px 0}
 .pname.fin{font-size:13px;color:#93a7bd}
+.right{display:inline-flex;align-items:center;gap:8px}
 .pt2{font-size:13px;color:#8fc0ff;white-space:nowrap}
 .pt2.bad{color:#e05b52;font-weight:700}
 .pname{font-size:12.5px;color:#9fb0c4;min-width:96px}
@@ -697,7 +698,8 @@ function dayText(){
     if(oral.length)bits.push("Oral: "+(!oral.some(x=>x.oralDone)&&!oral.some(x=>x.oralMarked)?(oral.some(x=>x.done)?"нет":"не отмечено"):(oral.every(x=>x.oralDone)?"да":"нет")));
     const pn=rows.filter(x=>x.kind==="km");
     if(pn.length)bits.push("ПН: "+(!pn.some(x=>x.pnDone)&&!pn.some(x=>x.pnMarked)?"не отмечено":(pn.every(x=>x.pnDone)?"да":"нет")));
-    if(rows[0].comment)bits.push("коммент: "+rows[0].comment);
+
+    rows.forEach(x=>{ if(x.comment) bits.push(projShort(x.proj)+" — коммент: "+x.comment); });
     out.push("— "+bits.join(" · "));
   });
   out.push("");
@@ -716,7 +718,7 @@ function openCmt(i){
 function saveCmt(){
   const t=document.getElementById("cmt-text").value.trim();
   const list=pts(state.active); const p=list[cmtIdx]; if(!p)return;
-  list.forEach(x=>{if(String(x.tt)===String(p.tt))x.comment=t||null});
+  p.comment=t||null;
   save(); document.getElementById("cmtwrap").classList.remove("on"); renderRoute();
 }
 
@@ -935,7 +937,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v78`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v80`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -1011,9 +1013,9 @@ function renderRoute(){
               const btn=!x.start?`<button class="primary small" ${blocked?"disabled style=opacity:.4":""} data-pstart="${blocked?"":idxs[ix]}">${nm} — начать</button>`
                 :(!x.end?`<button class="ok small" data-pend="${idxs[ix]}">${nm} — закончила</button>`
                 :`<span class="pname fin">${nm}</span>`);
-              return `<div class="projline">${btn}<span class="pt2 ${over?"bad":""}">${tstr}</span></div>`;
+              const cc=`<button class="small cmtbtn ${x.comment?"has":""}" data-cmt="${idxs[ix]}" title="Комментарий по проекту">${x.comment?"💬✓":"💬"}</button>`;
+              return `<div class="projline">${btn}<span class="right">${cc}<span class="pt2 ${over?"bad":""}">${tstr}</span></span></div>`+(x.comment?`<div class="cmttext">${esc(x.comment)}</div>`:"");
             }).join("")}
-          <button class="small cmtbtn ${rows[0].comment?"has":""}" data-cmt="${idx0(idxs)}" title="Комментарий">${rows[0].comment?"💬✓":"💬"}</button>${rows[0].comment?`<span class="cmttext">${esc(rows[0].comment)}</span>`:""}
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         </div>
       </div>
