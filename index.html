@@ -566,14 +566,14 @@ const INV_REASONS=["Запрет директора","Нет КСО / обору
 
 const TIM_ITEMS={
   "КМ1":[
-    {k:"odnoraz",t:"Одноразки — не меньше 60%"},
-    {k:"faces",t:"Фейсы выложены"},
-    {k:"satellites",t:"Спутники на месте"},
-    {k:"price",t:"Ценники выставлены"}
+    {k:"hooks",t:"Крючки — есть"},
+    {k:"balm",t:"5 бальзамов / лосьонов"},
+    {k:"foam",t:"20 пен / гелей"},
+    {k:"odnoraz",t:"60% одноразок"}
   ],
   "КМ2":[
-    {k:"odnoraz",t:"Одноразки — не меньше 60%"},
-    {k:"price",t:"Ценники выставлены"}
+    {k:"hooks",t:"Крючки — есть"},
+    {k:"odnoraz",t:"60% одноразок"}
   ]
 };
 const TIM_REASONS=["Запрет директора","Нет оборудования на КСО","Нет места","НТЗ","Другое"];
@@ -590,6 +590,7 @@ function openTim(i){
     const items=TIM_ITEMS[p.tim]||TIM_ITEMS["КМ1"];
     const host=document.getElementById("tim-check-list");host.innerHTML="";
     timChecks={};
+    document.getElementById("tim-hooks").value="";
     items.forEach(it=>{
       const c=document.createElement("div");c.className="chip";c.textContent=it.t;
       c.onclick=()=>{timChecks[it.k]=!timChecks[it.k];c.classList.toggle("sel",!!timChecks[it.k])};
@@ -620,9 +621,11 @@ function saveTim(){
     const items=TIM_ITEMS[p.tim]||TIM_ITEMS["КМ1"];
     const doneCount=items.filter(it=>timChecks[it.k]).length;
     if(doneCount===0){alert("Отметь, что сделано по ТИМ");return}
-    const all=doneCount===items.length;
+    const hooks=parseInt(String(document.getElementById("tim-hooks").value||"").replace(/\D/g,""),10);
+    const needHooks=items.some(it=>it.k==="hooks");
+    const all=doneCount===items.length&&(!needHooks||hooks>0);
     pts(state.active).forEach(x=>{ if(String(x.tt)===String(p.tt)&&x.kind!=="none"){
-      x.timMarked=true;x.timDone=all;x.timCheck={...timChecks};
+      x.timMarked=true;x.timDone=all;x.timCheck={...timChecks};x.timHooks=(isFinite(hooks)?hooks:null);
       x.timReason=all?null:("выполнено "+doneCount+" из "+items.length);
     }});
     save();document.getElementById("timwrap").classList.remove("on");renderRoute();return;
@@ -1001,7 +1004,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v83`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v84`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -1066,7 +1069,7 @@ function renderRoute(){
             const sh=rows.find(x=>x.shelves&&x.shelves>0);
             return `<button class="chk ${dn?"on":(mk?"no":"")}" ${started?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" ✓"+(sh?": "+sh.shelves:""):(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
           ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" ${started?"":"disabled"} data-ir="${idx0(idxs)}">IR</button>`:""}
-          ${pns!==null?`<button class="chk ${pns?"on":""}" ${started?"":"disabled"} data-pn="${idx0(idxs)}">ПН</button>`:""}
+          ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces);return `<button class="chk ${pns?"on":""}" ${started?"":"disabled"} data-pn="${idx0(idxs)}">ПН${pf?" ✓: "+pf.pnFaces:""}</button>`;})():""}
           ${oral!==null?`<button class="chk ${oral?"on":""}" ${started?"":"disabled"} data-oral="${idx0(idxs)}">Oral</button>`:""}
         </div>
         <div class="chkline">
@@ -1148,7 +1151,16 @@ function renderRoute(){
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
   wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;openTim(b.dataset.tim)});
   wrap.querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.ir))[0].tt;const g=rowsOf(b.dataset.ir);const w=gRows(g).filter(x=>x.ir);const v=!w.every(x=>x.irDone);w.forEach(x=>x.irDone=v);save();renderRoute()});
-  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.pn))[0].tt;const g=rowsOf(b.dataset.pn);const w=gRows(g).filter(p=>p.kind==="km");const v=!w.every(p=>p.pnDone);w.forEach(p=>p.pnDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{
+    state.keepTt=gRows(rowsOf(b.dataset.pn))[0].tt;
+    const g=rowsOf(b.dataset.pn), w=gRows(g).filter(p=>p.kind==="km");
+    const cur=w.find(p=>p.pnFaces);
+    const raw=prompt("Сколько фейсов подарочных наборов?", cur?String(cur.pnFaces):"");
+    if(raw===null)return;
+    const n=parseInt(String(raw).replace(/\D/g,""),10);
+    w.forEach(p=>{p.pnFaces=(n>0?n:null); p.pnDone=(n>0); p.pnMarked=true;});
+    save();renderRoute();
+  });
   wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.oral))[0].tt;const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
   wrap.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pend];p.end=new Date().toISOString();p.done=true;save();renderRoute()});
