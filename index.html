@@ -362,6 +362,8 @@ function humanDate(s){
 /* маршрут, собранный ассистентом: дата → точки по порядку с плановым временем */
 const PRESETS={
  "2026-11-20":[
+  {net:"Магнит ДК",lvl:"Золото",addr:"Светлановский пр., 48к4",tt:"107056",proj:"Gillette OSA",hours:"07:00 – 23:00",tim:"КСО",t:25,la:60.0254663,lo:30.3812893,inv:true},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Светлановский пр., 48к4",tt:"107056",proj:"Oral Care OSA",hours:"07:00 – 23:00",tim:"—",t:7,la:60.0254663,lo:30.3812893},
   {net:"Верный",lvl:"Железо",addr:"Светлановский пр., 36В",tt:"107033",proj:"Gillette OSA",hours:"08:00 – 23:00",tim:"—",t:15,la:60.02259,lo:30.3754453},
   {net:"Магнит ДК",lvl:"Золото",addr:"пр. Науки, 15к1",tt:"107058",proj:"Gillette OSA",hours:"Круглосуточно",tim:"КСО",t:25,la:60.016053,lo:30.380235,inv:true},
   {net:"Магнит ДК",lvl:"Золото",addr:"пр. Науки, 15к1",tt:"107058",proj:"Oral Care OSA",hours:"Круглосуточно",tim:"—",t:7,la:60.016053,lo:30.380235},
@@ -369,9 +371,11 @@ const PRESETS={
   {net:"Магнит ДК",lvl:"Золото",addr:"пр. Науки, 10к1",tt:"107073",proj:"Gillette OSA",hours:"Круглосуточно",tim:"КСО",t:30,la:60.0152088,lo:30.3915206,inv:true},
   {net:"Магнит ДК",lvl:"Золото",addr:"пр. Науки, 10к1",tt:"107073",proj:"Oral Care OSA",hours:"Круглосуточно",tim:"—",t:7,la:60.0152088,lo:30.3915206},
   {net:"Дикси",lvl:"Серебро",addr:"Гражданский пр., 4",tt:"107042",proj:"Gillette OSA",hours:"Круглосуточно",tim:"—",t:24,la:60.016723,lo:30.4091967},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Светлановский пр., 48к4",tt:"107056",proj:"Gillette OSA",hours:"07:00 – 23:00",tim:"КСО",t:25,la:60.0254663,lo:30.3812893,inv:true},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Светлановский пр., 48к4",tt:"107056",proj:"Oral Care OSA",hours:"07:00 – 23:00",tim:"—",t:7,la:60.0254663,lo:30.3812893},
+  {net:"Пятерочка",lvl:"Серебро",addr:"ул. Карпинского 38к1",tt:"141417",proj:"Gillette",hours:"—",tim:"—",t:15,la:60.01297,lo:30.4287077},
   {net:"Магнит КМ",lvl:"Золото",addr:"пр. Науки, 44",tt:"106977",proj:"Gillette",hours:"09:30 – 21:30",tim:"КМ1",t:41,la:60.0068668,lo:30.4242088},
+  {net:"Пятерочка",lvl:"Медь",addr:"ул. Карпинского, 16",tt:"155954",proj:"Gillette",hours:"—",tim:"—",t:15,la:60.0051899,lo:30.4192567},
+  {net:"Дикси",lvl:"Серебро",addr:"пр. Науки, 55",tt:"107038",proj:"Gillette OSA",hours:"Круглосуточно",tim:"—",t:24,la:60.0074658,lo:30.4174418},
+  {net:"Магнит ДК",lvl:"Железо",addr:"пр. Науки 24к1",tt:"123457954",proj:"Gillette OSA",hours:"09:00 – 22:00",tim:"КСО",t:26,la:60.0095102,lo:30.4135064},
   {net:"Магнит ДК",lvl:"Серебро",addr:"пр. Непокорённых, 16к1",tt:"107051",proj:"Gillette OSA",hours:"08:00 – 22:30",tim:"КСО",t:25,la:59.9947896,lo:30.4050463},
   {net:"Магнит ДК",lvl:"Серебро",addr:"пр. Непокорённых, 16к1",tt:"107051",proj:"Oral Care OSA",hours:"08:00 – 22:30",tim:"—",t:7,la:59.9947896,lo:30.4050463},
   {net:"Дикси",lvl:"Золото",addr:"пр. Тореза, 21",tt:"107035",proj:"Gillette OSA",hours:"Круглосуточно",tim:"—",t:24,la:60.0028531,lo:30.3605012},
@@ -389,7 +393,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="20-11-2";
+const PRESET_VER="20-11-3";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -920,7 +924,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v73`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v74`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
