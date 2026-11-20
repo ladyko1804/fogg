@@ -945,6 +945,33 @@ async function saveAdd(){
   document.getElementById("addwrap").classList.remove("on");
   renderRoute();
 }
+function moveNext(tt){
+  const list=pts(state.active), rows=list.filter(x=>String(x.tt)===String(tt));
+  if(!rows.length)return;
+  const nm=rows[0].net+" "+rows[0].addr;
+  if(!confirm("Перенести на следующий день?\n"+nm))return;
+  const d=new Date(state.active+"T12:00:00"); d.setDate(d.getDate()+1);
+  const nd=d.toISOString().slice(0,10);
+  state.days[state.active]=list.filter(x=>String(x.tt)!==String(tt));
+  state.days[nd]=(state.days[nd]||[]).concat(rows.map(x=>({...x,done:false,start:null,end:null})));
+  state.keepTt=null; save(); renderRoute();
+}
+function wireSwipe(el,tt){
+  let x0=null,y0=null,dx=0,active=false;
+  el.addEventListener("touchstart",e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY;dx=0;active=false;el.style.transition="none";},{passive:true});
+  el.addEventListener("touchmove",e=>{
+    if(x0===null)return;
+    const t=e.touches[0];dx=t.clientX-x0;const dy=t.clientY-y0;
+    if(Math.abs(dx)>Math.abs(dy)+6&&dx>0){active=true;el.style.transform=`translateX(${Math.min(dx,150)}px)`;}
+  },{passive:true});
+  const end=()=>{
+    if(x0===null)return;
+    el.style.transition="transform .18s";el.style.transform="";
+    const go=active&&dx>90;x0=null;active=false;
+    if(go)moveNext(tt);
+  };
+  el.addEventListener("touchend",end);el.addEventListener("touchcancel",end);
+}
 function gotoCard(tt){
   document.getElementById("mapwrap").classList.remove("on");
   state.keepTt=String(tt);
@@ -1005,7 +1032,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v85`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v86`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -1097,9 +1124,9 @@ function renderRoute(){
       <div class="arrowbox">
         <button class="small" data-up="${idx0(idxs)}" ${(pos===0||isDone||running)?"disabled style=opacity:.25":""}>↑</button>
         <button class="small" data-down="${idx0(idxs)}" ${(pos===groups.length-1||isDone||running)?"disabled style=opacity:.25":""}>↓</button>
-        <button class="small next" data-next="${idx0(idxs)}" title="Перенести на следующий день">→</button>
       </div>
     </div>`;
+    el.querySelectorAll && wireSwipe(el,String(p.tt));
     if(isDone){el.classList.add("dim");doneEls.push(el);}
     else wrap.appendChild(el);
   });
@@ -1131,16 +1158,6 @@ function renderRoute(){
   }
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
-  wrap.querySelectorAll("[data-next]").forEach(b=>b.onclick=()=>{
-    const g=rowsOf(b.dataset.next), rows=gRows(g), tt=String(rows[0].tt);
-    const nm=rows[0].net+" "+rows[0].addr;
-    if(!confirm("Перенести на следующий день?\n"+nm))return;
-    const d=new Date(state.active+"T12:00:00"); d.setDate(d.getDate()+1);
-    const nd=d.toISOString().slice(0,10);
-    state.days[state.active]=pts(state.active).filter(x=>String(x.tt)!==tt);
-    state.days[nd]=(state.days[nd]||[]).concat(rows.map(x=>({...x,done:false,start:null,end:null})));
-    state.keepTt=null; save(); renderRoute();
-  });
   wrap.querySelectorAll("[data-void]").forEach(b=>b.onclick=()=>{
     const g=rowsOf(b.dataset.void), nm=gRows(g)[0].net+" "+gRows(g)[0].addr;
     if(!confirm("Точно удалить визит?\n"+nm+"\nМагазин останется, отметки и время обнулятся."))return;
