@@ -565,6 +565,7 @@ function saveTim(){
   const p=pts(state.active)[timIdx];
   if(!timChoice){alert("Выбери: сделано или нет");return}
   if(timChoice==="no"&&!timReason){alert("Выбери причину");return}
+  if(timChoice==="done"&&!timShelves){alert("Выбери, сколько доп. полок");return}
   let why=timReason;
   if(timChoice==="no"&&timReason==="Другое"){const t=document.getElementById("tim-other").value.trim();if(t)why=t;}
   pts(state.active).forEach(x=>{ if(String(x.tt)===String(p.tt)&&x.kind!=="none"){
@@ -912,7 +913,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v60`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;return ` · инвент <b>${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""} · v61`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -951,15 +952,15 @@ function renderRoute(){
       <div style="flex:1;min-width:0">
         <div class="t">${netBadge(p.net)}${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}${p.hours&&p.hours!=="—"?" · "+p.hours:""}</div>
-        <div class="meta">${rows[0].shelves?"полок: "+rows[0].shelves:""}</div>
+        
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
           <button class="ibtn" data-info="${idx0(idxs)}" title="Информация о магазине">i</button>
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
             return `<button class="chk ${dn?"on":(cl?"no":"")}" data-inv="${idx0(idxs)}">${dn?"Инвент ✓":(cl?"Инвент: нет":"Инвент")}</button>`;})():""}
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
-            return `<button class="chk ${dn?"on":(mk?"no":"")}" data-tim="${idx0(idxs)}">${dn?timLabel+" ✓":(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
-          ${tim===true?`<span class="shelves">полки: ${[1,2,3,4,5].map(n=>`<button class="sbtn ${(+rows[0].shelves===n)?"on":""}" data-shelf="${idx0(idxs)}|${n}">${n}</button>`).join("")}</span>`:""}
+            const sh=rows.find(x=>x.shelves&&x.shelves>0);
+            return `<button class="chk ${dn?"on":(mk?"no":"")}" data-tim="${idx0(idxs)}">${dn?timLabel+" ✓"+(sh?": "+sh.shelves:""):(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
           ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" data-ir="${idx0(idxs)}">IR</button>`:""}
           ${pns!==null?`<button class="chk ${pns?"on":""}" data-pn="${idx0(idxs)}">ПН</button>`:""}
           ${oral!==null?`<button class="chk ${oral?"on":""}" data-oral="${idx0(idxs)}">Oral</button>`:""}
