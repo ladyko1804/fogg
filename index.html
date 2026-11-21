@@ -1085,7 +1085,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v96`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v97`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -1426,5 +1426,131 @@ document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwr
 document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
 document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
+
+<style>
+.nstrip{display:flex;gap:7px;align-items:flex-start;background:#3a2c14;border:1px solid #7a5c22;color:#f3d79a;border-radius:9px;padding:7px 9px;font-size:13px;margin:6px 0 2px;line-height:1.35;cursor:pointer}
+.nstrip b{font-weight:700}
+.ntake .t{font-size:13.5px;color:#9fb0c4;margin-bottom:6px}
+.ntake .it{display:flex;gap:8px;padding:5px 0;border-top:1px solid #1d2530;font-size:13px;color:#e6edf5}
+.ntake .it:first-of-type{border-top:0}
+.ntake .place{color:#8aa2bd;flex:0 0 42%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ntake .txt{flex:1;min-width:0;overflow-wrap:anywhere}
+.note-done{font-size:12px;color:#8fe0a8;background:#17301f;border:1px solid #2c5c3a;border-radius:9px;padding:5px 8px;margin:6px 0 2px;display:inline-block}
+#notewrap{position:fixed;inset:0;background:#000b;z-index:91;display:none;align-items:center;justify-content:center;padding:16px}
+#notewrap.on{display:flex}
+#note-text{width:100%;min-height:96px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:10px;padding:10px;font:14px/1.45 system-ui;resize:vertical}
+</style>
+<script>
+(function(){
+"use strict";
+try{
+var KEY="moi-store-notes", DKEY="moi-store-notes-done", curTT=null;
+function all(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){return{}}}
+function saveAll(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+function doneMap(){try{return JSON.parse(localStorage.getItem(DKEY)||"{}")||{}}catch(e){return{}}}
+function saveDone(o){try{localStorage.setItem(DKEY,JSON.stringify(o))}catch(e){}}
+function todayISO(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function esc2(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function whoOf(c){
+  try{
+    var t=c.querySelector(".t"); if(!t) return "";
+    var net=(t.firstChild&&t.firstChild.textContent?t.firstChild.textContent:"").trim();
+    var code=t.querySelector(".code"); var cd=code?code.textContent.trim():"";
+    var out=(net+" "+cd).trim();
+    return out||(c.dataset.tt||"");
+  }catch(e){ return c.dataset.tt||""; }
+}
+function rerender(){ try{ if(typeof renderRoute==="function") renderRoute(); }catch(e){} }
+
+var wrap=document.createElement("div");
+wrap.id="notewrap";
+wrap.innerHTML='<div class="cmtbox"><div class="cmthead" id="note-who"></div>'+
+ '<div class="hint" style="margin:0 0 8px">Что сделать в этом магазине в следующий раз. Запись подсветится, когда магазин снова будет в маршруте.</div>'+
+ '<textarea id="note-text" placeholder="например: протереть бокс, взять отвёртку, приклеить шелфтокер"></textarea>'+
+ '<div class="cmtfoot"><button class="small del" id="note-del">Сделала — убрать</button><button class="small" id="note-cancel">Отмена</button><button class="small primary" id="note-ok">Сохранить</button></div></div>';
+document.body.appendChild(wrap);
+wrap.addEventListener("click",function(e){ if(e.target===wrap) wrap.classList.remove("on"); });
+document.getElementById("note-cancel").onclick=function(){ wrap.classList.remove("on"); };
+document.getElementById("note-ok").onclick=function(){
+  var t=document.getElementById("note-text").value.trim();
+  var o=all();
+  if(!t){ delete o[curTT]; } else { o[curTT]={t:t,at:todayISO()}; }
+  saveAll(o);
+  var dn=doneMap(); delete dn[curTT]; saveDone(dn);
+  wrap.classList.remove("on"); rerender();
+};
+document.getElementById("note-del").onclick=function(){
+  var o=all(); delete o[curTT]; saveAll(o);
+  var dn=doneMap(); dn[curTT]=todayISO(); saveDone(dn);
+  wrap.classList.remove("on"); rerender();
+};
+function openNote(tt,who){
+  curTT=String(tt);
+  document.getElementById("note-who").textContent=who||("ТТ "+tt);
+  var n=all()[curTT];
+  document.getElementById("note-text").value=n?n.t:"";
+  document.getElementById("note-del").style.display=n?"":"none";
+  wrap.classList.add("on");
+  setTimeout(function(){ document.getElementById("note-text").focus(); },60);
+}
+
+function decorate(){
+  try{
+    var host=document.getElementById("s-route"); if(!host) return;
+    var notes=all(), dn=doneMap();
+    var cards=[].slice.call(host.querySelectorAll(".card[data-tt]"));
+    var old=host.querySelector(".ntake"); if(old) old.remove();
+    var items=[], seen={};
+    cards.forEach(function(c){
+      var tt=String(c.dataset.tt); if(seen[tt])return; seen[tt]=1;
+      var n=notes[tt]; if(!n||!n.t) return;
+      items.push({tt:tt, net:whoOf(c)||("ТТ "+tt), t:n.t});
+    });
+    if(items.length){
+      var box=document.createElement("div"); box.className="card ntake";
+      box.innerHTML='<div class="t">📦 Взять с собой — записи на этот день ('+items.length+')</div>'+
+        items.map(function(i){ return '<div class="it"><span class="place">'+esc2(i.net)+'</span><span class="txt">'+esc2(i.t)+'</span></div>'; }).join("");
+      var filters=host.querySelector(".filters");
+      if(filters) host.insertBefore(box,filters); else host.insertBefore(box,host.firstChild);
+    }
+    cards.forEach(function(c){
+      var tt=String(c.dataset.tt);
+      var chk0=c.querySelector(".chkline"); var flex=chk0?chk0.parentElement:null; if(!flex) return;
+      var who=whoOf(c)||("ТТ "+tt);
+      var n=notes[tt], d=dn[tt];
+      var st0=flex.querySelector(".nstrip"); if(st0&&(!n||!n.t)) st0.remove();
+      var d0=flex.querySelector(".note-done"); if(d0&&!d) d0.remove();
+      if(!flex.querySelector(".nstrip") && !flex.querySelector(".note-done") && (n||d)){
+        var el=document.createElement("div");
+        if(n&&n.t){ el.className="nstrip"; el.innerHTML='<span>📌</span><span><b>В следующий раз:</b> '+esc2(n.t)+'</span>'; }
+        else { el.className="note-done"; el.textContent="✅ сделано "+d; }
+        el.dataset.noteOpen=tt; el.dataset.who=who;
+        var firstChk=flex.querySelector(".chkline");
+        flex.insertBefore(el, firstChk||null);
+      }
+      var chk=flex.querySelector(".chkline");
+      if(chk && !chk.querySelector("[data-note-open]")){
+        var b=document.createElement("button");
+        b.className="chk"; b.dataset.noteOpen=tt; b.dataset.who=who;
+        b.textContent="📝 что сделать";
+        b.style.background="#22303f"; b.style.borderColor="#33465c"; b.style.color="#a9c4e0"; b.style.fontWeight="500";
+        chk.appendChild(b);
+      }
+    });
+  }catch(e){}
+}
+document.addEventListener("click",function(e){
+  var t=e.target&&e.target.closest?e.target.closest("[data-note-open]"):null;
+  if(t){ e.preventDefault(); e.stopPropagation(); openNote(t.dataset.noteOpen,t.dataset.who); }
+},true);
+if(typeof window.renderRoute==="function"){
+  var orig=window.renderRoute;
+  window.renderRoute=function(){ var r=orig.apply(this,arguments); decorate(); return r; };
+}
+setTimeout(decorate,300);
+}catch(e){}
+})();
+</script>
+
 </body>
 </html>
