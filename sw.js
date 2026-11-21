@@ -1,8 +1,18 @@
-const CACHE="moi-day-v87";
+const CACHE="moi-day-v88";
 const ASSETS=["./index.html","./manifest.json","./icon.svg"];
+const CDN=[
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+];
 
 self.addEventListener("install",e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
+  e.waitUntil((async()=>{
+    const c=await caches.open(CACHE);
+    await c.addAll(ASSETS).catch(()=>{});
+    // библиотека карты — по одной, чтобы одна ошибка не сломала установку
+    for(const u of CDN){ try{ await c.add(new Request(u,{mode:"no-cors"})); }catch(_){} }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate",e=>{
@@ -12,29 +22,47 @@ self.addEventListener("activate",e=>{
   );
 });
 
+function timeoutFetch(req,ms){
+  return new Promise(resolve=>{
+    let done=false;
+    const t=setTimeout(()=>{ if(!done){done=true;resolve(null);} },ms);
+    fetch(req).then(r=>{ if(!done){done=true;clearTimeout(t);resolve(r);} })
+             .catch(()=>{ if(!done){done=true;clearTimeout(t);resolve(null);} });
+  });
+}
+
 self.addEventListener("fetch",e=>{
   const req=e.request;
   if(req.method!=="GET")return;
   const url=new URL(req.url);
+  if(url.hostname.includes("tile.openstreetmap.org"))return; // карту в офлайн не кэшируем
   const isDoc=req.mode==="navigate"||/\.html$/.test(url.pathname)||url.pathname.endsWith("/");
 
   if(isDoc){
-    // сеть впереди: новая версия приложения приходит сразу
-    e.respondWith(
-      fetch(req).then(r=>{
-        const cp=r.clone();
+    // 3 секунды на сеть: если связи нет или она еле дышит — сразу отдаём сохранённую копию
+    e.respondWith((async()=>{
+      const net=await timeoutFetch(req,3000);
+      if(net){
+        const cp=net.clone();
         caches.open(CACHE).then(c=>c.put(req,cp)).catch(()=>{});
-        return r;
-      }).catch(()=>caches.match(req).then(r=>r||caches.match("./index.html")))
-    );
+        return net;
+      }
+      const hit=await caches.match(req);
+      if(hit)return hit;
+      return (await caches.match("./index.html"))||Response.error();
+    })());
     return;
   }
 
-  e.respondWith(
-    caches.match(req).then(hit=>hit||fetch(req).then(r=>{
-      const cp=r.clone();
+  e.respondWith((async()=>{
+    const hit=await caches.match(req);
+    if(hit)return hit;
+    const net=await timeoutFetch(req,4000);
+    if(net){
+      const cp=net.clone();
       caches.open(CACHE).then(c=>c.put(req,cp)).catch(()=>{});
-      return r;
-    }).catch(()=>caches.match("./index.html")))
-  );
+      return net;
+    }
+    return new Response("",{status:504,statusText:"offline"});
+  })());
 });
