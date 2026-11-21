@@ -1,4 +1,4 @@
-const CACHE="moi-day-v93";
+const CACHE="moi-day-v94";
 const ASSETS=["./index.html","./manifest.json","./icon.svg"];
 const CDN=[
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
