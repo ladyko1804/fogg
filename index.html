@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f1216">
 <title>Мой день</title>
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <style>
@@ -1074,7 +1075,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v94`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v95`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
