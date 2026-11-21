@@ -419,7 +419,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="20-11-5";
+const PRESET_VER="21-11-1";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -483,6 +483,16 @@ function load(){
   }
   if(s.pVer!==PRESET_VER){
     for(const d of Object.keys(PRESETS)) mergePreset(s,d);
+    // координаты и часы в уже сохранённых днях — освежить из базы
+    Object.keys(s.days||{}).forEach(d=>{
+      (s.days[d]||[]).forEach(x=>{
+        const b=baseOf(x.tt); if(!b)return;
+        if(b.la!=null&&b.lo!=null){x.la=b.la;x.lo=b.lo;}
+        if(b.h&&(x.hours==="—"||!x.hours))x.hours=b.h;
+        if(b.l&&(x.lvl==="—"||!x.lvl))x.lvl=b.l;
+        if(b.ap)x.approx=true; else delete x.approx;
+      });
+    });
     s.pVer=PRESET_VER;
     try{localStorage.setItem("moi-day2",JSON.stringify(s))}catch(e){}
   }
@@ -1075,7 +1085,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v95`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v96`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
