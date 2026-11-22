@@ -914,6 +914,18 @@ function commentHistory(tt){
 }
 function showInfo(i){
   const p=pts(state.active)[+i]; const b=baseOf(p.tt)||{};
+  const personal=/личн/i.test((p.proj||"")+" "+(p.net||""))||!/^\d+$/.test(String(p.tt));
+  if(personal){
+    document.getElementById("inf-who").textContent=(p.net||"Личное дело")+" · "+(p.addr||"");
+    const h=commentHistory(p.tt).slice(0,12);
+    document.getElementById("inf-body").innerHTML=
+      (p.comment?`<div style="color:#e8c07d">${esc(p.comment)}</div>`:"")+
+      (h.length?`<div style="margin-top:12px;border-top:1px solid #1d2530;padding-top:10px;font-size:12.5px;color:#8b9aab">История</div>`+
+        h.map(c=>`<div style="font-size:12.5px;padding:3px 0"><b style="color:#8fc0ff">${c.date.slice(8,10)}.${c.date.slice(5,7)}</b> · ${esc(c.text)}</div>`).join(""):"")+
+      (!p.comment&&!h.length?`<span style="color:#7c8b9c">Пометок нет</span>`:"");
+    document.getElementById("infwrap").classList.add("on");
+    return;
+  }
   document.getElementById("inf-who").textContent=(p.net||"")+" · "+p.addr;
   const note=p.note||b.c||"";
   let dir=b.dir||"";
@@ -1193,7 +1205,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v116`;
+      (navigator.onLine?"":" · офлайн")+` · v117`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
@@ -1250,7 +1262,7 @@ function renderRoute(){
     el.innerHTML=`<button class="ibtn top" data-info="${idx0(idxs)}" title="Информация о магазине">i</button><button class="vdel" data-void="${idx0(idxs)}" title="Удалить визит — обнулить отметки">🗑</button><button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
-        <div class="t">${netBadge(p.net,p.proj)}${p.net}<span class="code">${/^\d+$/.test(String(p.tt))?"glz_"+p.tt:p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
+        <div class="t">${netBadge(p.net,p.proj)}${p.net}${/^\d+$/.test(String(p.tt))?`<span class="code">glz_${p.tt}</span>`:""}${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}</div>
         ${p.hours&&p.hours!=="—"?`<div class="addr hours">${p.hours}</div>`:""}
         ${(()=>{const ci=closeInfo(p.hours); if(!ci||ci.left>=1e8) return "";
