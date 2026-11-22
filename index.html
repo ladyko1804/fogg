@@ -131,6 +131,8 @@ header{position:relative}
 .chk:disabled{opacity:.8;filter:none;border-style:dashed}
 .chk.no{background:#3a1d20;border-color:#6b2a2f;color:#ff9a94}
 .sbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6;font-weight:700}
+#todowrap{position:fixed;inset:0;background:#000b;z-index:92;display:none;align-items:center;justify-content:center;padding:16px}
+#todowrap.on{display:flex}
 #bkpwrap{position:fixed;inset:0;background:#000b;z-index:91;display:none;align-items:center;justify-content:center;padding:16px}
 #bkpwrap.on{display:flex}
 #infwrap{position:fixed;inset:0;background:#000b;z-index:90;display:none;align-items:center;justify-content:center;padding:16px}
@@ -178,6 +180,8 @@ document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
 document.getElementById("add-from-codes").onclick=quickAdd;
 document.getElementById("opt-ok").onclick=runOpt;
+document.getElementById("todo-ok").onclick=saveTodo;
+document.getElementById("todo-cancel").onclick=()=>document.getElementById("todowrap").classList.remove("on");
 document.getElementById("bkp-copy").onclick=backupCopy;
 document.getElementById("bkp-paste").onclick=backupPaste;
 document.getElementById("bkp-close").onclick=()=>document.getElementById("bkpwrap").classList.remove("on");
@@ -197,6 +201,14 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="sub" id="h-sub">—</div>
   <div class="topbtns"><button id="btn-map" title="Карта точек">Карта</button><button id="btn-opt-top" title="Оптимизировать маршрут">Оптимизировать</button></div>
 </header>
+
+<div id="todowrap">
+  <div class="cmtbox">
+    <div class="cmthead">Не забыть · <span id="todo-who"></span></div>
+    <textarea id="todo-text" placeholder="Например: привезти крючки — 3 шт" style="width:100%;min-height:90px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:10px;padding:10px;font:14px/1.45 system-ui"></textarea>
+    <div class="cmtfoot"><button id="todo-ok" class="primary small">Сохранить</button><button id="todo-cancel" class="small">Отмена</button></div>
+  </div>
+</div>
 
 <div id="bkpwrap">
   <div class="cmtbox">
@@ -484,6 +496,7 @@ function load(){
   let s=null;
   try{s=JSON.parse(localStorage.getItem("moi-day2")||"null")}catch(e){}
   if(!s)s={days:{},tasks:[],active:todayISO,calY:new Date().getFullYear(),calM:new Date().getMonth()};
+  if(!s.reminders)s.reminders=[];
   if(!s.days[todayISO])s.days[todayISO]=(presetFor(todayISO)||[]).map(p=>({...p,kind:kindOf(p.net),done:false}));
   if(!s.active)s.active=todayISO;
   if(s.r2!=="20-11-clear"){ if(s.days&&s.days["2026-11-20"]) delete s.days["2026-11-20"]; s.r2="20-11-clear";
@@ -881,6 +894,15 @@ async function backupPaste(){
     document.getElementById("bkp-status").textContent="Данные восстановлены.";
   }catch(e){document.getElementById("bkp-status").textContent="Не получилось разобрать текст."}
 }
+function commentHistory(tt){
+  const out=[];
+  Object.keys(state.days||{}).sort().reverse().forEach(d=>{
+    (state.days[d]||[]).forEach(x=>{
+      if(String(x.tt)===String(tt)&&x.comment)out.push({date:d,proj:x.proj,text:x.comment});
+    });
+  });
+  return out;
+}
 function showInfo(i){
   const p=pts(state.active)[+i]; const b=baseOf(p.tt)||{};
   document.getElementById("inf-who").textContent=(p.net||"")+" · "+p.addr;
@@ -902,7 +924,13 @@ function showInfo(i){
     ["Координаты", b.ap?"примерные — нужна геометка":"точные"]
   ];
   const body="<div>"+rows.map(([k,v])=>`<div style="display:flex;gap:8px;padding:3px 0"><span style="color:#8b9aab;min-width:132px">${k}:</span><span>${esc(v)}</span></div>`).join("")+"</div>"
-    +(note?`<div style="margin-top:10px;color:#e8c07d;font-size:13px">${esc(note)}</div>`:"");
+    +(note?`<div style="margin-top:10px;color:#e8c07d;font-size:13px">${esc(note)}</div>`:"")
+    +(()=>{const h=commentHistory(p.tt).slice(0,12);
+        if(!h.length)return "";
+        return `<div style="margin-top:14px;border-top:1px solid #1d2530;padding-top:10px">
+          <div style="font-size:12.5px;color:#8b9aab;margin-bottom:6px">История комментариев</div>`+
+          h.map(c=>`<div style="font-size:12.5px;padding:3px 0"><b style="color:#8fc0ff">${c.date.slice(8,10)}.${c.date.slice(5,7)}</b> · ${esc(projShort(c.proj))}: ${esc(c.text)}</div>`).join("")+
+          `</div>`;})();
   document.getElementById("inf-body").innerHTML=body;
   document.getElementById("infwrap").classList.add("on");
 }
@@ -1111,7 +1139,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v99`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v102`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
@@ -1161,6 +1189,7 @@ function renderRoute(){
     const inv=gInv(rows), tim=gTim(rows), pns=gPns(rows), oral=gOral(rows);
     const started=rows.some(x=>x.start);
     const timLabel=p.kind==="km"?("ТИМ "+(p.tim||"КМ")):"ТИМ КСО";
+    const rems=storeReminders(p.tt);
     el.innerHTML=`<button class="ibtn top" data-info="${idx0(idxs)}" title="Информация о магазине">i</button><button class="vdel" data-void="${idx0(idxs)}" title="Удалить визит — обнулить отметки">🗑</button><button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
@@ -1195,13 +1224,12 @@ function renderRoute(){
                 :(!x.end?`<button class="ok small" data-pend="${idxs[ix]}">${nm} — закончила</button>`
                 :`<span class="pname fin">${nm}</span>`);
               const cc=`<button class="small cmtbtn ${x.comment?"has":""}" data-cmt="${idxs[ix]}" title="Комментарий по проекту">${x.comment?"💬✓":"💬"}</button>`;
-              const pc=x.comment?null:prevComment(x.tt,state.active);
-              const rem=x.comment?`<div class="cmttext">${esc(x.comment)}</div>`
-                :(pc?`<div class="cmttext prev">прошлый раз (${pc.date.slice(8,10)}.${pc.date.slice(5,7)}): ${esc(pc.text)}</div>`:"");
+              const rem=x.comment?`<div class="cmttext">${esc(x.comment)}</div>`:"";
               return `<div class="projline">${btn}<span class="right">${cc}<span class="pt2 ${over?"bad":""}">${tstr}</span></span></div>`+rem;
             }).join("")}
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         </div>
+        ${rems.map(r=>`<div class="reminder">📌 ${esc(r.text)} <button class="small" data-remdone="${r.id}">✓</button></div>`).join("")}
       </div>
       <div class="arrowbox">
         <button class="small" data-up="${idx0(idxs)}" ${(pos===0||isDone||running)?"disabled style=opacity:.25":""}>↑</button>
@@ -1258,6 +1286,11 @@ function renderRoute(){
   });
   wrap.querySelectorAll("[data-rpt]").forEach(b=>b.onclick=()=>openRpt(b.dataset.rpt));
   wrap.querySelectorAll("[data-info]").forEach(b=>b.onclick=()=>showInfo(b.dataset.info));
+  wrap.querySelectorAll("[data-todo]").forEach(b=>b.onclick=()=>openTodo(b.dataset.todo));
+  wrap.querySelectorAll("[data-remdone]").forEach(b=>b.onclick=()=>{
+    const r=(state.reminders||[]).find(x=>x.id===b.dataset.remdone); if(r){r.done=true;r.doneDate=state.active;}
+    save();renderRoute();renderTasks();
+  });
   wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
@@ -1418,13 +1451,44 @@ document.getElementById("r-send").onclick=async()=>{
 };
 
 /* ---------- задачи ---------- */
+function storeReminders(tt){
+  return (state.reminders||[]).filter(r=>String(r.tt)===String(tt)&&!r.done);
+}
+let todoIdx=null;
+function openTodo(i){
+  todoIdx=+i; const p=pts(state.active)[todoIdx];
+  document.getElementById("todo-who").textContent=(p.net||"")+" · "+p.addr;
+  document.getElementById("todo-text").value="";
+  document.getElementById("todowrap").classList.add("on");
+  setTimeout(()=>document.getElementById("todo-text").focus(),60);
+}
+function saveTodo(){
+  const p=pts(state.active)[todoIdx];
+  const t=document.getElementById("todo-text").value.trim();
+  if(!t){alert("Напиши, что не забыть");return}
+  state.reminders=state.reminders||[];
+  state.reminders.push({id:Date.now()+"_"+Math.random().toString(36).slice(2,6),
+    tt:String(p.tt),net:p.net,addr:p.addr,text:t,date:state.active,done:false});
+  save();document.getElementById("todowrap").classList.remove("on");renderRoute();renderTasks();
+}
 function renderTasks(){
   const ul=document.getElementById("t-list");
-  ul.innerHTML=state.tasks.map((t,i)=>`<li class="${t.done?"checked":""}">
+  const rem=(state.reminders||[]).filter(r=>!r.done);
+  const byText=new Map();
+  rem.forEach(r=>{const k=r.text.toLowerCase();if(!byText.has(k))byText.set(k,{text:r.text,items:[]});byText.get(k).items.push(r)});
+  const remHtml=[...byText.values()].map(g=>`<li class="remgroup">
+     <div class="rg-head">📌 ${esc(g.text)} — <b>${g.items.length}</b></div>
+     ${g.items.map(r=>`<div class="rg-item"><span class="txt">${esc(r.net)} ${esc(r.addr)}</span><button class="small" data-remdone2="${r.id}">✓</button></div>`).join("")}
+   </li>`).join("");
+  ul.innerHTML=remHtml+state.tasks.map((t,i)=>`<li class="${t.done?"checked":""}">
     <button class="small" data-t="${i}">${t.done?"✓":"○"}</button>
     <span class="txt">${t.text}</span>
-    <button class="small" data-del="${i}">✕</button></li>`).join("")||'<li class="hint">Пока пусто</li>';
+    <button class="small" data-del="${i}">✕</button></li>`).join("")||(remHtml?"":'<li class="hint">Пока пусто</li>');
   ul.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const t=state.tasks[+b.dataset.t];t.done=!t.done;save();renderTasks()});
+  ul.querySelectorAll("[data-remdone2]").forEach(b=>b.onclick=()=>{
+    const r=(state.reminders||[]).find(x=>x.id===b.dataset.remdone2); if(r){r.done=true;r.doneDate=state.active;}
+    save();renderTasks();renderRoute();
+  });
   ul.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{state.tasks.splice(+b.dataset.del,1);save();renderTasks()});
 }
 document.getElementById("t-add").onclick=()=>{
@@ -1444,6 +1508,8 @@ document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
 document.getElementById("add-from-codes").onclick=quickAdd;
 document.getElementById("opt-ok").onclick=runOpt;
+document.getElementById("todo-ok").onclick=saveTodo;
+document.getElementById("todo-cancel").onclick=()=>document.getElementById("todowrap").classList.remove("on");
 document.getElementById("bkp-copy").onclick=backupCopy;
 document.getElementById("bkp-paste").onclick=backupPaste;
 document.getElementById("bkp-close").onclick=()=>document.getElementById("bkpwrap").classList.remove("on");
