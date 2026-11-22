@@ -323,7 +323,7 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <span class="chip2" id="map-f-me">📍 Я здесь</span>
   <span class="chip2" id="map-f-reset">Сбросить</span>
 </div>
-<div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>закрыт (серый)</span><span><b class="l-inv"></b>инвент (красное кольцо)</span><span><b class="l-ph"></b>личное дело / аптека</span></div>
+<div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>закрыт (серый)</span><span><b class="l-inv"></b>инвент (красное кольцо)</span><span><b class="l-ph"></b>личное дело</span></div>
   <div id="map"></div>
 </div>
 
@@ -1205,7 +1205,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v118`;
+      (navigator.onLine?"":" · офлайн")+` · v119`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
