@@ -126,6 +126,8 @@ header{position:relative}
 .card.dim .t{font-size:14px;font-weight:600;font-style:italic}
 .card.dim .addr{font-size:12.5px;font-style:italic}
 .card.dim .meta,.card.dim .ptime,.card.dim .projline .pname{font-style:italic}
+.closing{font-size:12.5px;font-weight:700}
+.closing.bad{color:#ff6b6b}
 .addr.hours{font-size:12px;color:#93a7bd;margin-top:1px}
 .vdel{position:absolute;right:36px;bottom:7px;width:26px;height:26px;border-radius:8px;padding:0;
   background:#1a1f26;border:1px solid var(--line);color:#c9d4e0;font-size:12px;line-height:24px;text-align:center}
@@ -1191,7 +1193,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v115`;
+      (navigator.onLine?"":" · офлайн")+` · v116`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
@@ -1251,6 +1253,10 @@ function renderRoute(){
         <div class="t">${netBadge(p.net,p.proj)}${p.net}<span class="code">${/^\d+$/.test(String(p.tt))?"glz_"+p.tt:p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}</div>
         ${p.hours&&p.hours!=="—"?`<div class="addr hours">${p.hours}</div>`:""}
+        ${(()=>{const ci=closeInfo(p.hours); if(!ci||ci.left>=1e8) return "";
+          if(ci.closed) return `<div class="closing bad">магазин закрыт</div>`;
+          if(ci.left<=60) return `<div class="closing bad">до закрытия магазина осталось ${ci.left} мин</div>`;
+          return "";})()}
         
         ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
         <div class="chkline">
