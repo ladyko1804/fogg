@@ -93,8 +93,10 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .calhead .mname{font-weight:600}
 .calhead button{padding:6px 12px}
 )
-#btn-map,#btn-opt-top{font-size:13px;padding:7px 12px;border-radius:10px;background:#1d2b3d;border:1px solid var(--line);color:#cfe3ff}
-.topbtns{position:absolute;right:12px;top:12px;display:flex;gap:8px}
+#btn-map,#btn-opt-top{font-size:12px;padding:6px 9px;border-radius:10px;background:#1d2b3d;border:1px solid var(--line);color:#cfe3ff}
+header{display:flex;gap:10px;align-items:flex-start}
+.hmain{flex:1;min-width:0}
+.topbtns{position:static;display:flex;gap:6px;flex:0 0 auto}
 header{position:relative}
 #mapwrap{position:fixed;inset:0;background:#0b0f14;z-index:70;display:none;flex-direction:column}
 #mapwrap.on{display:flex}
@@ -197,8 +199,8 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
 </head>
 <body>
 <header>
-  <h1 id="h-title">Мой день</h1>
-  <div class="sub" id="h-sub">—</div>
+  <div class="hmain"><h1 id="h-title">Мой день</h1>
+  <div class="sub" id="h-sub">—</div></div>
   <div class="topbtns"><button id="btn-map" title="Карта точек">Карта</button><button id="btn-opt-top" title="Оптимизировать маршрут">Оптимизировать</button></div>
 </header>
 
@@ -1139,7 +1141,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v102`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v103`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
