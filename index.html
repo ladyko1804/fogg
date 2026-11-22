@@ -94,9 +94,11 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .calhead button{padding:6px 12px}
 )
 #btn-map,#btn-opt-top{font-size:12px;padding:6px 9px;border-radius:10px;background:#1d2b3d;border:1px solid var(--line);color:#cfe3ff}
-header{display:flex;gap:10px;align-items:flex-start}
-.hmain{flex:1;min-width:0}
-.topbtns{position:static;display:flex;gap:6px;flex:0 0 auto}
+header{display:block}
+.h1line{font-size:18px;font-weight:700;color:#e6edf5}
+.h1line .dow{font-weight:400;font-size:14px;color:#9fb0c4;margin-left:6px}
+.topbtns{display:flex;gap:8px;margin-top:9px}
+.topbtns button{flex:1}
 header{position:relative}
 #mapwrap{position:fixed;inset:0;background:#0b0f14;z-index:70;display:none;flex-direction:column}
 #mapwrap.on{display:flex}
@@ -199,8 +201,8 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
 </head>
 <body>
 <header>
-  <div class="hmain"><h1 id="h-title">Мой день</h1>
-  <div class="sub" id="h-sub">—</div></div>
+  <div class="h1line"><span id="h-date">Сегодня</span> <span id="h-dow" class="dow">—</span></div>
+  <div class="sub" id="h-sub">—</div>
   <div class="topbtns"><button id="btn-map" title="Карта точек">Карта</button><button id="btn-opt-top" title="Оптимизировать маршрут">Оптимизировать</button></div>
 </header>
 
@@ -1140,8 +1142,26 @@ function drawMap(){
 function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
-  document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v103`;
+  {
+    const dow=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"][new Date(state.active+"T12:00:00").getDay()];
+    const dObj=new Date(state.active+"T12:00:00");
+    const title=state.active===todayISO?"Сегодня":humanDate(state.active);
+    document.getElementById("h-date").textContent=title;
+    document.getElementById("h-dow").textContent=dow;
+    const tts=[...new Set(all.map(p=>String(p.tt)))];
+    const invT=tts.filter(t=>all.some(p=>String(p.tt)===t&&p.inv));
+    const invDone=invT.filter(t=>all.filter(p=>String(p.tt)===t&&p.inv).every(p=>p.invClosed)).length;
+    const timT=tts.filter(t=>all.some(p=>String(p.tt)===t&&p.kind!=="none"));
+    const timDone=timT.filter(t=>all.filter(p=>String(p.tt)===t&&p.kind!=="none").every(p=>p.timDone)).length;
+    const irNeed=all.filter(p=>p.ir&&!p.irDone).length;
+    const sentN=sentFor(state.active);
+    const worked=dayWorked(all);
+    document.getElementById("h-sub").innerHTML=
+      `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
+      `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
+      (worked?` · в магазинах ${fmtDur(worked)}`:"")+
+      (navigator.onLine?"":" · офлайн")+` · v104`;
+  }
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
