@@ -581,8 +581,8 @@ function gInv(rows){const w=rows.filter(p=>p.inv);return w.length?w.every(p=>p.i
 function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.every(p=>p.timDone):null}
 function gPns(rows){const w=rows.filter(p=>p.kind==="km");return w.length?w.every(p=>p.pnDone):null}
 function gOral(rows){const w=rows.filter(p=>/oral/i.test(p.proj||""));return w.length?w.every(p=>p.oralDone):null}
-function netBadge(net){
-  const n=String(net||"");
+function netBadge(net,proj){
+  const n=String(net||"")+" "+String(proj||"");
   let bg="#41505f", fg="#fff", l=(n[0]||"•").toUpperCase();
   if(/Пятёрочка/i.test(n)){bg="#d32f2f";fg="#fff";l="5"}
   else if(/Дикси/i.test(n)){bg="#f57c00";fg="#fff";l="Д"}
@@ -1165,7 +1165,7 @@ function drawMap(){
     const ph=/Аптека|Личн/i.test((p.net||"")+" "+(p.proj||"")), inv=p.inv, ap=p.approx;
     const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${ph?"ph":""} ${inv?"iv":""} ${ap?"ap":""}">${i+1}${inv?"<i>И</i>":""}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
     L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
-      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}<br><a href="#" onclick="gotoCard('${p.tt}');return false" style="display:inline-block;margin:2px 0 6px;padding:5px 10px;background:#1d2b3d;border:1px solid #32506f;border-radius:8px;color:#cfe3ff;text-decoration:none">Открыть карточку</a><br><a href="yandexnavi://build_route_on_map?lat_to=${p.la}&lon_to=${p.lo}">Навигатор — от меня</a> · <a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
+      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}<br><a href="#" onclick="gotoCard('${p.tt}');return false" style="display:inline-block;margin:2px 0 6px;padding:5px 10px;background:#1d2b3d;border:1px solid #32506f;border-radius:8px;color:#cfe3ff;text-decoration:none">Открыть карточку</a><br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
@@ -1191,7 +1191,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v113`;
+      (navigator.onLine?"":" · офлайн")+` · v114`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
@@ -1248,7 +1248,7 @@ function renderRoute(){
     el.innerHTML=`<button class="ibtn top" data-info="${idx0(idxs)}" title="Информация о магазине">i</button><button class="vdel" data-void="${idx0(idxs)}" title="Удалить визит — обнулить отметки">🗑</button><button class="xdel" data-del="${idx0(idxs)}" title="Удалить точку из маршрута">✕</button><div class="row">
       <div class="num ${isDone?"done":(running?"run":(pos===curG?"cur":""))}">${isDone?"✓":pos+1}</div>
       <div style="flex:1;min-width:0">
-        <div class="t">${netBadge(p.net)}${p.net}<span class="code">${p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
+        <div class="t">${netBadge(p.net,p.proj)}${p.net}<span class="code">${/^\d+$/.test(String(p.tt))?"glz_"+p.tt:p.tt}</span>${p.lvl&&p.lvl!=="—"?`<span class="lvl ${lvlCls(p.lvl)}">${p.lvl}</span>`:""}</div>
         <div class="addr">${p.addr}</div>
         ${p.hours&&p.hours!=="—"?`<div class="addr hours">${p.hours}</div>`:""}
         
