@@ -63,6 +63,7 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .ibtn.top{position:absolute;right:10px;top:8px;z-index:2}
 .ibtn{width:22px;height:22px;border-radius:50%;background:#1f6feb;border:0;color:#fff;
   font:700 13px/22px Georgia,serif;padding:0;font-style:italic}
+.cmttext.prev{color:#8fa7bd;font-style:italic}
 .cmttext{font-size:12px;color:#e8c07d;flex:1 1 55%;min-width:0;overflow-wrap:anywhere}
 .cmtbtn{font-size:15px;padding:3px 9px;line-height:1.2;color:#fff}
 .cmtbtn.has{background:#1f2937;border-color:#3b4b5f}
@@ -443,6 +444,14 @@ function durMin(a,b){return Math.round((new Date(b)-new Date(a))/60000)}
 function fmtDur(m){if(m<60)return `${m} мин`;const h=Math.floor(m/60),r=m%60;return r?`${h} ч ${r} мин`:`${h} ч`}
 function dayWorked(list){return list.reduce((acc,p)=>acc+((p.start&&p.end)?durMin(p.start,p.end):0),0)}
 
+function prevComment(tt,date){
+  const keys=Object.keys(state.days||{}).filter(d=>d<date).sort().reverse();
+  for(const d of keys){
+    const rows=(state.days[d]||[]).filter(x=>String(x.tt)===String(tt)&&x.comment);
+    if(rows.length)return {date:d,text:rows.map(r=>r.comment).join(" · ")};
+  }
+  return null;
+}
 function enrichDay(date){
   const list=state.days[date]; if(!list)return;
   list.forEach(p=>{
@@ -1169,7 +1178,10 @@ function renderRoute(){
                 :(!x.end?`<button class="ok small" data-pend="${idxs[ix]}">${nm} — закончила</button>`
                 :`<span class="pname fin">${nm}</span>`);
               const cc=`<button class="small cmtbtn ${x.comment?"has":""}" data-cmt="${idxs[ix]}" title="Комментарий по проекту">${x.comment?"💬✓":"💬"}</button>`;
-              return `<div class="projline">${btn}<span class="right">${cc}<span class="pt2 ${over?"bad":""}">${tstr}</span></span></div>`+(x.comment?`<div class="cmttext">${esc(x.comment)}</div>`:"");
+              const pc=x.comment?null:prevComment(x.tt,state.active);
+              const rem=x.comment?`<div class="cmttext">${esc(x.comment)}</div>`
+                :(pc?`<div class="cmttext prev">прошлый раз (${pc.date.slice(8,10)}.${pc.date.slice(5,7)}): ${esc(pc.text)}</div>`:"");
+              return `<div class="projline">${btn}<span class="right">${cc}<span class="pt2 ${over?"bad":""}">${tstr}</span></span></div>`+rem;
             }).join("")}
           ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         </div>
