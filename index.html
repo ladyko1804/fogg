@@ -1179,7 +1179,7 @@ function drawMap(){
     const ph=/Аптека|Личн/i.test((p.net||"")+" "+(p.proj||"")), inv=p.inv, ap=p.approx;
     const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${ph?"ph":""} ${inv?"iv":""} ${ap?"ap":""}">${i+1}${inv?"<i>И</i>":""}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
     L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
-      `<b>${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}<br><a href="#" onclick="gotoCard('${p.tt}');return false" style="display:inline-block;margin:2px 0 6px;padding:5px 10px;background:#1d2b3d;border:1px solid #32506f;border-radius:8px;color:#cfe3ff;text-decoration:none">Открыть карточку</a><br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
+      `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}<br><a href="#" onclick="gotoCard('${p.tt}');return false" style="display:inline-block;margin:2px 0 6px;padding:5px 10px;background:#1d2b3d;border:1px solid #32506f;border-radius:8px;color:#cfe3ff;text-decoration:none">Открыть карточку</a><br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
@@ -1205,7 +1205,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v117`;
+      (navigator.onLine?"":" · офлайн")+` · v118`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
