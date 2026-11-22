@@ -1,6 +1,6 @@
 {
- "name": "Фогг",
- "short_name": "Фогг",
+ "name": "Fogg",
+ "short_name": "Fogg",
  "start_url": "./index.html",
  "scope": "./",
  "display": "standalone",
