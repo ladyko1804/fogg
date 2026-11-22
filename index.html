@@ -166,6 +166,8 @@ header{position:relative}
 .pin{width:28px;height:28px;border-radius:50%;background:#f1c40f;color:#241f10;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .pin.dn{background:#77828f}
 .pin.ph{background:#7b1fa2}
+.pin .lg{position:absolute;right:-8px;bottom:-8px;width:16px;height:16px;border-radius:50%;
+  background:#fff;font:700 10px/16px system-ui;text-align:center;box-shadow:0 1px 3px #0008}
 .pin.ap{outline:2px dashed #9fb0c4;outline-offset:2px}
 .pin.iv{box-shadow:0 0 0 3px #c0392b,0 1px 5px #000a;position:relative}
 .pin.iv i{position:absolute;right:-6px;top:-6px;width:14px;height:14px;border-radius:50%;background:#e67e22;color:#1a1f26;font:700 9px/14px system-ui;font-style:normal}
@@ -583,6 +585,21 @@ function gInv(rows){const w=rows.filter(p=>p.inv);return w.length?w.every(p=>p.i
 function gTim(rows){const w=rows.filter(p=>p.kind!=="none");return w.length?w.every(p=>p.timDone):null}
 function gPns(rows){const w=rows.filter(p=>p.kind==="km");return w.length?w.every(p=>p.pnDone):null}
 function gOral(rows){const w=rows.filter(p=>/oral/i.test(p.proj||""));return w.length?w.every(p=>p.oralDone):null}
+function netStyle(net,proj){
+  const n=String(net||"")+" "+String(proj||"");
+  if(/Пятёрочка/i.test(n))return {bg:"#d32f2f",fg:"#fff",l:"5"};
+  if(/Дикси/i.test(n))return {bg:"#f57c00",fg:"#fff",l:"Д"};
+  if(/Косметик|КМ/i.test(n))return {bg:"#c2185b",fg:"#fff",l:"М"};
+  if(/Магнит/i.test(n))return {bg:"#c62828",fg:"#fff",l:"М"};
+  if(/Перекр/i.test(n))return {bg:"#2e7d32",fg:"#fff",l:"Х"};
+  if(/Верный/i.test(n))return {bg:"#1b7f3a",fg:"#e53935",l:"В"};
+  if(/Подружка/i.test(n))return {bg:"#ad1457",fg:"#fff",l:"П"};
+  if(/РивГош/i.test(n))return {bg:"#6a1b9a",fg:"#fff",l:"Р"};
+  if(/МВидео/i.test(n))return {bg:"#fbc02d",fg:"#241f10",l:"М"};
+  if(/Эльдорадо/i.test(n))return {bg:"#00897b",fg:"#fff",l:"Э"};
+  if(/Аптека|Личн/i.test(n))return {bg:"#7b1fa2",fg:"#fff",l:"•"};
+  return {bg:"#41505f",fg:"#fff",l:(String(net||"•")[0]||"•").toUpperCase()};
+}
 function netBadge(net,proj){
   const n=String(net||"")+" "+String(proj||"");
   let bg="#41505f", fg="#fff", l=(n[0]||"•").toUpperCase();
@@ -1176,8 +1193,8 @@ function drawMap(){
   const ll=ps.map(p=>[p.la,p.lo]);
   L.polyline(ll,{color:"#4a7bb5",weight:4,opacity:.85}).addTo(mapObj);
   ps.forEach((p,i)=>{
-    const ph=/Аптека|Личн/i.test((p.net||"")+" "+(p.proj||"")), inv=p.inv, ap=p.approx;
-    const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${ph?"ph":""} ${inv?"iv":""} ${ap?"ap":""}">${i+1}${inv?"<i>И</i>":""}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
+    const st=netStyle(p.net,p.proj), inv=p.inv, ap=p.approx;
+    const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${inv?"iv":""} ${ap?"ap":""}" style="background:${p.done?"#77828f":st.bg};color:${p.done?"#fff":st.fg}">${i+1}${inv?"<i>И</i>":""}<b class="lg" style="color:${st.bg}">${st.l}</b></div>`,iconSize:[28,28],iconAnchor:[14,14]});
     L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
       `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}<br><a href="#" onclick="gotoCard('${p.tt}');return false" style="display:inline-block;margin:2px 0 6px;padding:5px 10px;background:#1d2b3d;border:1px solid #32506f;border-radius:8px;color:#cfe3ff;text-decoration:none">Открыть карточку</a><br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
   });
@@ -1205,7 +1222,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v120`;
+      (navigator.onLine?"":" · офлайн")+` · v121`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
