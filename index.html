@@ -35,6 +35,7 @@ button.small{padding:7px 11px;font-size:14px}
 button.wide{width:100%;margin-top:10px}
 label{display:block;font-size:13px;color:var(--dim);margin:12px 0 4px}
 input,select{width:100%;font:inherit;padding:11px;border-radius:11px;border:1px solid var(--line);background:#12171d;color:var(--text)}
+.chips{flex-wrap:wrap}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .chip{padding:9px 12px;border-radius:10px;background:#12171d;border:1px solid var(--line);font-size:14px}
 .chip.sel{background:#1d2b3d;border-color:var(--accent)}
@@ -154,7 +155,7 @@ header{position:relative}
 #rptwrap.on{display:flex}
 #cmtwrap{position:fixed;inset:0;background:#000b;z-index:80;display:none;align-items:center;justify-content:center;padding:16px}
 #cmtwrap.on{display:flex}
-.cmtbox{width:100%;max-width:520px;background:#141a21;border:1px solid var(--line);border-radius:14px;padding:14px}
+.cmtbox{width:100%;max-width:520px;max-height:88vh;overflow-y:auto;background:#141a21;border:1px solid var(--line);border-radius:14px;padding:14px}
 .cmthead{font-size:13.5px;color:#9fb0c4;margin-bottom:8px}
 #cmt-text{width:100%;min-height:120px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:10px;padding:10px;font:14px/1.45 system-ui;resize:vertical}
 .cmtfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
@@ -249,14 +250,14 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
       <label>Быстро: коды магазинов через запятую или с новой строки</label>
       <textarea id="add-codes" placeholder="glz_107061, 107062, 107064" style="width:100%;min-height:64px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:9px;padding:9px;font:13.5px/1.4 system-ui"></textarea>
       <div class="chkline"><button class="primary small" id="add-from-codes">Добавить эти коды</button></div>
-      <div class="hint">Сеть, адрес, уровень, часы и ТИМ подтянутся из базы. Проект поставлю Gillette OSA, потом поправишь.</div>
+      <div class="hint">Сеть, адрес, уровень, часы и ТИМ подтянутся из базы.</div>
     </div>
     <div id="add-fields">
-      <label>Сеть или название</label><input id="add-net" placeholder="Магнит ДК / Аптека / Личное">
+      <label id="add-net-label">Сеть или название</label><input id="add-net" placeholder="Магнит ДК / Аптека / Личное">
       <label>Адрес</label><input id="add-addr" placeholder="улица, дом">
-      <label>Комментарий (не обязательно)</label><input id="add-comment" placeholder="что угодно: что купить, что уточнить">
       <label>Координаты (не обязательно) — можно вставить ссылку или «59.98, 30.33»</label>
       <input id="add-coord" placeholder="59.9821, 30.3187">
+      <label>Комментарий (не обязательно)</label><input id="add-comment" placeholder="что угодно: что купить, что уточнить">
       <div id="add-work" style="display:none">
         <label>ID / код</label><input id="add-id" placeholder="glz_107999 или цифры">
         <label>Проект</label><input id="add-proj" placeholder="Gillette OSA">
@@ -992,7 +993,11 @@ function openAdd(){
   [["work","Работа"],["private","Личное дело"]].forEach(([v,txt])=>{
     const c=document.createElement("div");c.className="chip";c.textContent=txt;
     c.onclick=()=>{addKind=v;[...kd.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
-      document.getElementById("add-work").style.display=(v==="work")?"block":"none"};
+      const work=(v==="work");
+      document.getElementById("add-work").style.display=work?"block":"none";
+      document.getElementById("add-codes-wrap").style.display=work?"block":"none";
+      document.getElementById("add-net-label").textContent=work?"Сеть или название":"Название";
+      document.getElementById("add-net").placeholder=work?"Магнит ДК / Аптека / Личное":"Лермонтовский пр., аптека";};
     kd.appendChild(c);
   });
   [["add-inv",["надо","не надо"],x=>addInv=x],["add-ir",["надо","не надо"],x=>addIr=x]].forEach(([id,vals,set])=>{
@@ -1001,6 +1006,8 @@ function openAdd(){
       c.onclick=()=>{set(v);[...host.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel")};host.appendChild(c)});
   });
   document.getElementById("add-work").style.display="none";
+  document.getElementById("add-codes-wrap").style.display="none";
+  document.getElementById("add-net-label").textContent="Сеть или название";
   document.getElementById("addwrap").classList.add("on");
 }
 function quickAdd(){
@@ -1164,7 +1171,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v105`;
+      (navigator.onLine?"":" · офлайн")+` · v106`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
