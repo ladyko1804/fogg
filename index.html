@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f1216">
 <title>Fogg</title>
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="manifest" href="manifest.json?v=113">
+<link rel="manifest" href="manifest.json?v=125">
 <link rel="icon" href="icon.svg">
 <style>
 :root{--bg:#0f1216;--card:#171c22;--line:#252c34;--text:#e9edf2;--dim:#93a1b0;--ok:#3fb950;--warn:#d29922;--bad:#f85149;--accent:#4493f8}
@@ -1215,7 +1215,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v124`;
+      (navigator.onLine?"":" · офлайн")+` · v125`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
