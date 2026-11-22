@@ -322,7 +322,7 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div id="mapfilters">
   <select id="map-f-net"></select>
   <span class="chip2" id="map-f-inv">Инвент</span>
-  <span class="chip2" id="map-f-me">📍 Я здесь</span>
+  <span class="chip2" id="map-f-me">где я?</span>
   <span class="chip2" id="map-f-reset">Сбросить</span>
 </div>
 <div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>закрыт</span><span><b class="l-inv"></b>инвент</span><span><b class="l-ph"></b>личное дело</span></div>
@@ -1222,7 +1222,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v121`;
+      (navigator.onLine?"":" · офлайн")+` · v122`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
