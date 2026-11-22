@@ -166,6 +166,12 @@ header{position:relative}
 .pin{width:28px;height:28px;border-radius:50%;background:#f1c40f;color:#241f10;font:600 13px/26px system-ui;text-align:center;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .pin.dn{background:#77828f}
 .pin.ph{background:#7b1fa2}
+.mpin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;position:relative;
+  font:700 14px/1 system-ui;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
+.mnum{position:absolute;left:-9px;top:-9px;width:17px;height:17px;border-radius:50%;background:#0b0f14;color:#fff;
+  border:1px solid #ffffff55;font:700 10px/17px system-ui;text-align:center}
+.mpin.iv{box-shadow:0 0 0 3px #c0392b,0 1px 5px #000a}
+.mpin.ap{outline:2px dashed #9fb0c4;outline-offset:2px}
 .pin .lg{position:absolute;right:-8px;bottom:-8px;width:16px;height:16px;border-radius:50%;
   background:#fff;font:700 10px/16px system-ui;text-align:center;box-shadow:0 1px 3px #0008}
 .pin.ap{outline:2px dashed #9fb0c4;outline-offset:2px}
@@ -1194,9 +1200,7 @@ function drawMap(){
   L.polyline(ll,{color:"#4a7bb5",weight:4,opacity:.85}).addTo(mapObj);
   ps.forEach((p,i)=>{
     const st=netStyle(p.net,p.proj), inv=p.inv, ap=p.approx;
-    const ic=L.divIcon({className:"",html:`<div class="pin ${p.done?"dn":""} ${inv?"iv":""} ${ap?"ap":""}" style="background:${p.done?"#77828f":st.bg};color:${p.done?"#fff":st.fg}">${i+1}${inv?"<i>И</i>":""}<b class="lg" style="color:${st.bg}">${st.l}</b></div>`,iconSize:[28,28],iconAnchor:[14,14]});
-    L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
-      `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}<br><a href="#" onclick="gotoCard('${p.tt}');return false" style="display:inline-block;margin:2px 0 6px;padding:5px 10px;background:#1d2b3d;border:1px solid #32506f;border-radius:8px;color:#cfe3ff;text-decoration:none">Открыть карточку</a><br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
+    const ic=L.divIcon({className:"",html:`<div class="mpin ${inv?"iv":""} ${ap?"ap":""}" style="background:${p.done?"#77828f":st.bg};color:${p.done?"#fff":st.fg}">${st.l}<b class="mnum">${i+1}</b></div>`});
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
@@ -1222,7 +1226,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v122`;
+      (navigator.onLine?"":" · офлайн")+` · v123`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
