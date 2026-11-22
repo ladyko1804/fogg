@@ -236,6 +236,8 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
     <div id="add-fields">
       <label>Сеть или название</label><input id="add-net" placeholder="Магнит ДК / Аптека / Личное">
       <label>Адрес</label><input id="add-addr" placeholder="улица, дом">
+      <label>Координаты (не обязательно) — можно вставить ссылку или «59.98, 30.33»</label>
+      <input id="add-coord" placeholder="59.9821, 30.3187">
       <div id="add-work" style="display:none">
         <label>ID / код</label><input id="add-id" placeholder="glz_107999 или цифры">
         <label>Проект</label><input id="add-proj" placeholder="Gillette OSA">
@@ -927,6 +929,17 @@ function runOpt(){
   );
 }
 let addKind=null, addInv=null, addIr=null;
+function parseCoords(t){
+  const s=String(t||"");
+  let m=s.match(/(-?\d{2}\.\d{3,})\s*[,;\s]\s*(-?\d{2}\.\d{3,})/);
+  if(m){
+    let a=+m[1], b=+m[2];
+    // если первое число похоже на долготу (больше 90) — поменять местами
+    if(Math.abs(a)>90&&Math.abs(b)<=90){const t2=a;a=b;b=t2;}
+    if(Math.abs(a)<=90&&Math.abs(b)<=180)return [a,b];
+  }
+  return null;
+}
 async function geocode(q){
   try{
     const u="https://nominatim.openstreetmap.org/search?format=json&limit=1&q="+encodeURIComponent(q+", Санкт-Петербург");
@@ -985,8 +998,9 @@ async function saveAdd(){
   const addr=document.getElementById("add-addr").value.trim();
   if(!addKind){st.innerHTML='<span class="warn">Выбери: работа или личное</span>';return}
   if(!net||!addr){st.innerHTML='<span class="warn">Нужны название и адрес</span>';return}
-  st.textContent="Ищу адрес на карте…";
-  const [la,lo]=await geocode(addr);
+  const manual=parseCoords(document.getElementById("add-coord").value);
+  st.textContent=manual?"Беру указанные координаты…":"Ищу адрес на карте…";
+  const [la,lo]=manual||await geocode(addr);
   let tt,proj,tim,inv=false;
   if(addKind==="private"){
     tt="p"+Date.now().toString().slice(-6); proj="Личное дело"; tim="—";
@@ -1001,6 +1015,7 @@ async function saveAdd(){
   const row={net, lvl:"—", addr, tt, proj, hours:"—", tim, t:null, la:la, lo:lo};
   if(inv)row.inv=true;
   if(addIr==="надо")row.ir=true;
+  if(la==null||lo==null){st.innerHTML='<span class="warn">Адрес не нашёлся. Пришли геометку — вставь в поле координат «59.98, 30.31» и нажми «Добавить» ещё раз.</span>';}
   state.days[state.active]=pts(state.active).concat([{...row,kind:kindOf(net),done:false}]);
   save();
   document.getElementById("addwrap").classList.remove("on");
@@ -1094,7 +1109,7 @@ function renderRoute(){
   enrichDay(state.active);
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
   document.getElementById("h-title").textContent=state.active===todayISO?"Сегодня":"Маршрут";
-  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v97`;
+  document.getElementById("h-sub").innerHTML=`${humanDate(state.active)} · визитов <b>${doneCount} из ${all.length}</b> · отчётов: <b>${sentFor(state.active)}</b>${(()=>{const t=[...new Set(all.filter(p=>p.inv).map(p=>String(p.tt)))];if(!t.length)return "";const d=t.filter(x=>all.filter(p=>String(p.tt)===x&&p.inv).every(p=>p.invClosed)).length;const col=(d===t.length)?"#4caf50":"#e05b52";return ` · инвент <b style="color:${col}">${d}/${t.length}</b>`+(d<t.length?" ⚠️":"");})()}${dayWorked(all)?` · в магазинах ${fmtDur(dayWorked(all))}`:""}${navigator.onLine?"":" · офлайн"} · v98`;
   const wrap=document.getElementById("s-route");
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
