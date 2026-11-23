@@ -1648,7 +1648,10 @@ function renderRoute(){
     sentLog().filter(x=>x.date===state.active).forEach(x=>{sentRep += (x.tims&&x.tims.length)?x.tims.length:1});
     const worked=dayWorked(all);
     document.getElementById("h-sub").innerHTML=
-      `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
+      (()=>{const work=all.filter(p=>!/^p\d/i.test(String(p.tt))&&!/Личн/i.test(p.proj||""));
+        const wt=[...new Set(work.map(p=>String(p.tt)))];
+        const pers=all.length-work.length;
+        return `визитов: <b>${work.length}</b> · точек: <b>${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
       `IR: <b>${irDone}/${irTotal}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentRep}/${needRep}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
       (navigator.onLine?"":" · офлайн");
@@ -1777,7 +1780,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-opt">Оптимизировать маршрут</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v157"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v158"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
