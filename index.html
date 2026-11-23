@@ -126,6 +126,7 @@ header{position:relative}
 .card.dim .t{font-size:14px;font-weight:600;font-style:italic}
 .card.dim .addr{font-size:12.5px;font-style:italic}
 .card.dim .meta,.card.dim .ptime,.card.dim .projline .pname{font-style:italic}
+.verline{margin-top:10px;font-size:11px;color:#5d6b7a}
 .closing{font-size:12.5px;font-weight:700}
 .closing.bad{color:#ff6b6b}
 .addr.hours{font-size:12px;color:#93a7bd;margin-top:1px}
@@ -1214,13 +1215,20 @@ function renderRoute(){
     const timT=tts.filter(t=>all.some(p=>String(p.tt)===t&&p.kind!=="none"));
     const timDone=timT.filter(t=>all.filter(p=>String(p.tt)===t&&p.kind!=="none").every(p=>p.timDone)).length;
     const irNeed=all.filter(p=>p.ir&&!p.irDone).length;
-    const sentN=sentFor(state.active);
+    let needRep=0, sentRep=0;
+    tts.forEach(t=>{
+      const rows=all.filter(p=>String(p.tt)===t);
+      if(!rows.some(p=>p.kind!=="none"))return;
+      const isKM=rows.some(p=>p.kind==="km");
+      needRep += isKM?2:1;
+    });
+    sentLog().filter(x=>x.date===state.active).forEach(x=>{sentRep += (x.tims&&x.tims.length)?x.tims.length:1});
     const worked=dayWorked(all);
     document.getElementById("h-sub").innerHTML=
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
-      `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
+      `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentRep}/${needRep}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v126`;
+      (navigator.onLine?"":" · офлайн");
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
@@ -1344,6 +1352,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-opt">Оптимизировать маршрут</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v127"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
