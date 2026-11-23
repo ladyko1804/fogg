@@ -74,6 +74,7 @@ ul.tasks li.checked .txt{text-decoration:line-through;color:var(--dim)}
 .filters::-webkit-scrollbar{display:none}
 .chip2{flex:0 0 auto;font-size:12.5px;padding:6px 10px;border-radius:999px;background:#12171d;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
 .chip2.sel{background:#1d2b3d;border-color:var(--accent);color:#dbe9ff}
+.chkline{align-items:center}
 .chkline{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .chk{font-size:12.5px;padding:6px 10px;border-radius:9px;background:#3a1d20;border:1px solid #a13a3a;color:#ff9a94;font-weight:600}
 .chk.on{background:#17301f;border-color:#2c5c3a;color:#8fe0a8;font-weight:500}
@@ -127,6 +128,9 @@ header{position:relative}
 .card.dim .addr{font-size:12.5px;font-style:italic}
 .card.dim .meta,.card.dim .ptime,.card.dim .projline .pname{font-style:italic}
 .verline{margin-top:10px;font-size:11px;color:#5d6b7a}
+.factline{font-size:12.5px;color:#9db4cc;margin:7px 0 2px}
+.rptbtn{margin-top:8px;font-size:13px;padding:9px 12px}
+.rptbtn.sent{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6}
 .closing{font-size:12.5px;font-weight:700}
 .closing.bad{color:#ff6b6b}
 .addr.hours{font-size:12px;color:#93a7bd;margin-top:1px}
@@ -1293,7 +1297,7 @@ function renderRoute(){
           if(ci.left<=60) return `<div class="closing bad">до закрытия магазина осталось ${ci.left} мин</div>`;
           return "";})()}
         
-        ${p.start?`<div class="meta" style="color:${running?"#f0a0a8":"#9db4cc"}">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end)+" · "+fmtDur(durMin(p.start,p.end)):" · идёт сейчас"}</div>`:""}
+
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
             return `<button class="chk ${dn?"on":(cl?"no":"")}" ${started?"":"disabled"} data-inv="${idx0(idxs)}">${dn?"Инвент ✓":(cl?"Инвент: нет":"Инвент")}</button>`;})():""}
@@ -1323,8 +1327,9 @@ function renderRoute(){
               const rem=x.comment?`<div class="cmttext">${esc(x.comment)}</div>`:"";
               return `<div class="projline">${btn}<span class="right">${cc}<span class="pt2 ${over?"bad":""}">${tstr}</span></span></div>`+rem;
             }).join("")}
-          ${rows.some(x=>x.kind!=="none")?`<button class="small ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         </div>
+        ${p.start?`<div class="factline">${fmtHM(p.start)}${p.end?"–"+fmtHM(p.end):" – идёт сейчас"}</div>`:""}
+        ${rows.some(x=>x.kind!=="none")?`<button class="wide rptbtn ${rows.some(x=>x.sent)?"sent":""}" data-rpt="${idx0(idxs)}">${rows.some(x=>x.sent)?"Отчёт отправлен ✓":"Отчёт"}</button>`:""}
         ${rems.map(r=>`<div class="reminder">📌 ${esc(r.text)} <button class="small" data-remdone="${r.id}">✓</button></div>`).join("")}
       </div>
       <div class="arrowbox">
@@ -1352,7 +1357,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-opt">Оптимизировать маршрут</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v128"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v129"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
