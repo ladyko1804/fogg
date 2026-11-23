@@ -1614,6 +1614,7 @@ function drawMap(){
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
+function isPastDay(){return state.active<todayISO}
 function renderRoute(){
   enrichDay(state.active);
   const isPast=state.active<todayISO;
@@ -1723,13 +1724,13 @@ function renderRoute(){
 
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
-            return `<button class="chk ${dn?"on":(cl?"no":"")}" ${started?"":"disabled"} data-inv="${idx0(idxs)}">${dn?"Инвент ✓":(cl?"Инвент: нет":"Инвент")}</button>`;})():""}
+            return `<button class="chk ${dn?"on":(cl?"no":"")}" ${started?"":"disabled"} data-inv="${idx0(idxs)}">${dn?"Инвент : ✓":(cl?"Инвент : ✗ "+(inv[0].invReason||"нет"):"Инвент")}</button>`;})():""}
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
             const sh=rows.find(x=>x.shelves&&x.shelves>0);
-            return `<button class="chk ${dn?"on":(mk?"no":"")}" ${started?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" ✓"+(sh?": "+sh.shelves:""):(mk?"ТИМ: нет":timLabel)}</button>`;})():""}
+            return `<button class="chk ${dn?"on":(mk?"no":"")}" ${started?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" : ✓"+(sh?" "+sh.shelves:""):(mk?timLabel+" : ✗ "+(p.timReason||"нет"):timLabel)}</button>`;})():""}
           ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" ${started?"":"disabled"} data-ir="${idx0(idxs)}">IR</button>`:""}
           ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces);return `<button class="chk ${pns?"on":""}" ${started?"":"disabled"} data-pn="${idx0(idxs)}">ПН${pf?" ✓: "+pf.pnFaces:""}</button>`;})():""}
-          ${oral!==null?`<button class="chk ${oral?"on":""}" ${started?"":"disabled"} data-oral="${idx0(idxs)}">Oral</button>`:""}
+          ${oral!==null?`<button class="chk ${oral?"on":""}" ${started?"":"disabled"} data-oral="${idx0(idxs)}">${oral?"Oral : ✓":"Oral"}</button>`:""}
         </div>
         <div class="chkline">
           ${rows.map((x,ix)=>{
@@ -1780,7 +1781,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-opt">Оптимизировать маршрут</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v158"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v159"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
@@ -1794,7 +1795,7 @@ function renderRoute(){
   }
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
-  wrap.querySelectorAll("[data-void]").forEach(b=>b.onclick=()=>{
+  wrap.querySelectorAll("[data-void]").forEach(b=>b.onclick=()=>{if(isPastDay()){(window.toastMsg?toastMsg("День закрыт"):0);return;}
     const g=rowsOf(b.dataset.void), nm=gRows(g)[0].net+" "+gRows(g)[0].addr;
     if(!confirm("Точно удалить визит?\n"+nm+"\nМагазин останется, отметки и время обнулятся."))return;
     gRows(g).forEach(x=>{x.done=false;x.start=null;x.end=null;x.invDone=null;x.invClosed=null;x.invReason=null;
@@ -1802,14 +1803,14 @@ function renderRoute(){
       x.pnDone=null;x.pnMarked=null;x.sent=false});
     save();renderRoute();
   });
-  wrap.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+  wrap.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(isPastDay()){(window.toastMsg?toastMsg("День закрыт"):0);return;}
     const g=rowsOf(b.dataset.del), tt=String(gRows(g)[0].tt);
     const nm=gRows(g)[0].net+" "+gRows(g)[0].addr;
     if(!confirm("Удалить из маршрута: "+nm+"?"))return;
     state.days[state.active]=pts(state.active).filter(x=>String(x.tt)!==tt);
     state.keepTt=null; save(); renderRoute();
   });
-  wrap.querySelectorAll("[data-rpt]").forEach(b=>b.onclick=()=>openRpt(b.dataset.rpt));
+  wrap.querySelectorAll("[data-rpt]").forEach(b=>b.onclick=()=>{if(isPastDay()){alert("День закрыт — отчёт уже отправлен");return;}openRpt(b.dataset.rpt)})
   wrap.querySelectorAll("[data-info]").forEach(b=>b.onclick=()=>showInfo(b.dataset.info));
   wrap.querySelectorAll("[data-todo]").forEach(b=>b.onclick=()=>openTodo(b.dataset.todo));
   wrap.querySelectorAll("[data-remdone]").forEach(b=>b.onclick=()=>{
@@ -1817,11 +1818,11 @@ function renderRoute(){
     save();renderRoute();renderTasks();
   });
   wrap.querySelectorAll("[data-cmt]").forEach(b=>b.onclick=()=>openCmt(b.dataset.cmt));
-  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
+  wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{if(isPastDay()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
-  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;openTim(b.dataset.tim)});
-  wrap.querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.ir))[0].tt;const g=rowsOf(b.dataset.ir);const w=gRows(g).filter(x=>x.ir);const v=!w.every(x=>x.irDone);w.forEach(x=>x.irDone=v);save();renderRoute()});
-  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{
+  wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{if(isPastDay()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;openTim(b.dataset.tim)});
+  wrap.querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>{if(isPastDay()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.ir))[0].tt;const g=rowsOf(b.dataset.ir);const w=gRows(g).filter(x=>x.ir);const v=!w.every(x=>x.irDone);w.forEach(x=>x.irDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{if(isPastDay()){(window.toastMsg?toastMsg("День закрыт"):0);return;}
     state.keepTt=gRows(rowsOf(b.dataset.pn))[0].tt;
     const g=rowsOf(b.dataset.pn), w=gRows(g).filter(p=>p.kind==="km");
     const cur=w.find(p=>p.pnFaces);
@@ -1831,7 +1832,7 @@ function renderRoute(){
     w.forEach(p=>{p.pnFaces=(n>0?n:null); p.pnDone=(n>0); p.pnMarked=true;});
     save();renderRoute();
   });
-  wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.oral))[0].tt;const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{if(isPastDay()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.oral))[0].tt;const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
   wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
   wrap.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pend];p.end=new Date().toISOString();p.done=true;save();renderRoute()});
   wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.start));g.forEach(p=>{p.start=new Date().toISOString();p.end=null});save();renderRoute()});
