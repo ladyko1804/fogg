@@ -1189,7 +1189,12 @@ function drawMap(){
   L.polyline(ll,{color:"#4a7bb5",weight:4,opacity:.85}).addTo(mapObj);
   ps.forEach((p,i)=>{
     const st=netStyle(p.net,p.proj), inv=p.inv, ap=p.approx;
-    const ic=L.divIcon({className:"",html:`<div class="mpin ${inv?"iv":""} ${ap?"ap":""}" style="background:${p.done?"#77828f":st.bg};color:${p.done?"#fff":st.fg}">${st.l}<b class="mnum">${i+1}</b></div>`});
+    const ic=L.divIcon({className:"",html:`<div class="mpin ${inv?"iv":""} ${ap?"ap":""}" style="background:${p.done?"#77828f":st.bg};color:${p.done?"#fff":st.fg}">${st.l}<b class="mnum">${i+1}</b></div>`,iconSize:[30,30],iconAnchor:[15,15]});
+    L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
+      `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}`+
+      `${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}`+
+      `${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}`+
+      `<br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
@@ -1215,7 +1220,7 @@ function renderRoute(){
       `визитов: <b>${all.length}</b> · точек: <b>${tts.length}</b><br>`+
       `IR: <b>${irNeed}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b> · отчётов: <b>${sentN}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
-      (navigator.onLine?"":" · офлайн")+` · v125`;
+      (navigator.onLine?"":" · офлайн")+` · v126`;
   }
   const wrap=document.getElementById("s-route");
   if(!all.length){
