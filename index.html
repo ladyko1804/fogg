@@ -603,9 +603,9 @@ function netStyle(net,proj){
   const n=String(net||"")+" "+String(proj||"");
   if(/Пятёрочка/i.test(n))return {bg:"#d32f2f",fg:"#fff",l:"5"};
   if(/Дикси/i.test(n))return {bg:"#f57c00",fg:"#fff",l:"Д"};
-  if(/Косметик|КМ/i.test(n))return {bg:"#c2185b",fg:"#fff",l:"М"};
+  if(/Косметик|КМ/i.test(n))return {bg:"#ec1e9b",fg:"#fff",l:"М"};
   if(/Магнит/i.test(n))return {bg:"#c62828",fg:"#fff",l:"М"};
-  if(/Перекр/i.test(n))return {bg:"#2e7d32",fg:"#fff",l:"Х"};
+  if(/Перекр/i.test(n))return {bg:"#2e7d32",fg:"#fff",l:"П"};
   if(/Верный/i.test(n))return {bg:"#1b7f3a",fg:"#e53935",l:"В"};
   if(/Подружка/i.test(n))return {bg:"#ad1457",fg:"#fff",l:"П"};
   if(/РивГош/i.test(n))return {bg:"#6a1b9a",fg:"#fff",l:"Р"};
@@ -1374,7 +1374,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-opt">Оптимизировать маршрут</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v133"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v134"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
