@@ -1650,7 +1650,7 @@ function drawMap(){
 }
 function isPastDay(){return state.active<todayISO}
 function canEdit(){return !isPastDay()||!!state.unlock}
-function renderRoute(){
+function _renderRoute(){
   enrichDay(state.active);
   const isPast=state.active<todayISO;
   const all=pts(state.active), doneCount=all.filter(p=>p.done).length;
@@ -1829,7 +1829,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v214"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v215"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
@@ -1890,6 +1890,18 @@ function renderRoute(){
   wrap.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>moveGroup(rowsOf(b.dataset.up).idxs,-1));
   wrap.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>moveGroup(rowsOf(b.dataset.down).idxs,1));
 }
+function renderRoute(){
+  try{ _renderRoute() }
+  catch(e){
+    const w=document.getElementById("s-route");
+    if(w)w.innerHTML='<div class="card"><div class="hint" style="color:#ff9a9a">Ошибка списка: '+((e&&e.message)||e)+'</div>'+
+      '<div class="chkline"><button class="small" id="btn-reload">Перезагрузить</button></div></div>';
+    const b=document.getElementById("btn-reload");
+    if(b)b.onclick=()=>location.reload();
+    try{console.error(e)}catch(_){}
+  }
+}
+
 function idx0(idxs){return idxs[0]}
 function gRows(g){return g.rows}
 function moveGroup(idxs,dir){
