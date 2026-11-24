@@ -1734,13 +1734,13 @@ function renderRoute(){
 
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
-            return `<button class="chk ${dn?"on":(cl?"no":(done?"past":""))}" ${started?"":"disabled"} data-inv="${idx0(idxs)}">${dn?"Инвент : ✓":(cl?"Инвент : ✗ "+(inv[0].invReason||"нет"):"Инвент")}</button>`;})():""}
+            return `<button class="chk ${dn?"on":(cl?"no":(rows.every(x=>x.done)?"past":""))}" ${started?"":"disabled"} data-inv="${idx0(idxs)}">${dn?"Инвент : ✓":(cl?"Инвент : ✗ "+(inv[0].invReason||"нет"):"Инвент")}</button>`;})():""}
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
             const sh=rows.find(x=>x.shelves&&x.shelves>0);
-            return `<button class="chk ${dn?"on":(mk?"no":(done?"past":""))}" ${started?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" : ✓"+(sh?" "+sh.shelves:""):(mk?timLabel+" : ✗ "+(p.timReason||"нет"):timLabel)}</button>`;})():""}
+            return `<button class="chk ${dn?"on":(mk?"no":(rows.every(x=>x.done)?"past":""))}" ${started?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" : ✓"+(sh?" "+sh.shelves:""):(mk?timLabel+" : ✗ "+(p.timReason||"нет"):timLabel)}</button>`;})():""}
           ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" ${started?"":"disabled"} data-ir="${idx0(idxs)}">IR</button>`:""}
-          ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces);return `<button class="chk ${pns?"on":(done?"past":"")}" ${started?"":"disabled"} data-pn="${idx0(idxs)}">ПН${pf?" ✓: "+pf.pnFaces:""}</button>`;})():""}
-          ${oral!==null?`<button class="chk ${oral?"on":(done?"past":"")}" ${started?"":"disabled"} data-oral="${idx0(idxs)}">${oral?"Oral : ✓":"Oral"}</button>`:""}
+          ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces);return `<button class="chk ${pns?"on":(rows.every(x=>x.done)?"past":"")}" ${started?"":"disabled"} data-pn="${idx0(idxs)}">ПН${pf?" ✓: "+pf.pnFaces:""}</button>`;})():""}
+          ${oral!==null?`<button class="chk ${oral?"on":(rows.every(x=>x.done)?"past":"")}" ${started?"":"disabled"} data-oral="${idx0(idxs)}">${oral?"Oral : ✓":"Oral"}</button>`:""}
         </div>
         <div class="chkline">
           ${rows.map((x,ix)=>{
@@ -1791,7 +1791,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v165"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v166"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
