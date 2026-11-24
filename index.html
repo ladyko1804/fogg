@@ -109,6 +109,7 @@ header{position:relative}
 #mapwrap{position:fixed;inset:0;background:#0b0f14;z-index:70;display:none;flex-direction:column}
 #mapwrap.on{display:flex}
 #mapbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.maprow2{flex-basis:100%;display:flex;gap:8px;margin-top:2px}
 #mapfilters{display:flex;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 #mapfilters select{background:#12171d;color:#cfd8e3;border:1px solid var(--line);border-radius:9px;padding:6px 8px;font-size:12.5px;max-width:40vw}
 #map{flex:1;min-height:0}
@@ -342,8 +343,8 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <span class="chip2" id="map-f-inv">Инвент</span>
   <span class="chip2" id="map-f-ir">IR</span>
   <span class="chip2" id="map-f-tim">ТИМ</span>
-  <span class="chip2" id="map-f-me">где я?</span>
   <span class="chip2" id="map-f-reset">Сбросить</span>
+  <div class="maprow2"><span class="chip2" id="map-f-me">где я?</span></div>
 </div>
   <div id="map"></div>
 </div>
@@ -1811,7 +1812,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v170"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v171"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
