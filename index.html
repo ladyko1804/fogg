@@ -468,6 +468,7 @@ const PRESETS={
   {net:"Магнит ДК",lvl:"Железо",addr:"Светлановский пр., 14к1",tt:"163822",proj:"Gillette OSA",hours:"08:00 – 22:00",tim:"КСО",t:26,la:60.0100333,lo:30.3429954}
  ],
  "2026-11-24":[
+  {net:"Аптека Озерки",lvl:"—",addr:"бульвар Менделеева, 7 к2, Мурино",tt:"p_ozerki",proj:"Личное дело",hours:"08:00 – 23:00",t:10,la:60.052463,lo:30.430639,note:"Заказ 28983-8723, 572 ₽ — лекарство для глаз. Забрать до 27.11 23:00"},
 
 
 
@@ -1817,7 +1818,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v179"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v180"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
