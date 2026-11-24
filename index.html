@@ -1857,7 +1857,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v209"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v210"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
@@ -2142,33 +2142,6 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
 
 
 
-/* ---- диагностика: ?diag=1 ---- */
-(function(){
-  if(!/diag=1/.test(location.search))return;
-  const box=document.createElement("div");
-  box.style.cssText="position:fixed;left:0;right:0;top:0;z-index:9999;background:#111;color:#ff8f8f;font:12px/1.35 monospace;padding:8px;max-height:55vh;overflow:auto;white-space:pre-wrap";
-  document.body.appendChild(box);
-  const log=[];
-  function push(t){ log.push(t); box.textContent=log.join("\n"); }
-  window.addEventListener("error",e=>push("ERR: "+e.message+" @"+(e.lineno||"")+":"+(e.colno||"")));
-  window.addEventListener("unhandledrejection",e=>push("REJ: "+(e.reason&&e.reason.message||e.reason)));
-  setTimeout(()=>{
-    try{
-      const st=JSON.parse(localStorage.getItem("moi-day2")||"{}");
-      const d=st.active, list=(st.days&&st.days[d])||[];
-      const cards=document.querySelectorAll("#s-route .card").length;
-      const routeLen=(document.getElementById("s-route")||{}).innerHTML.length||0;
-      push("версия: "+((document.body.innerHTML.match(/версия v(\d+)/)||[])[0]||"?"));
-      push("день: "+d+" | строк в дне: "+list.length);
-      push("карточек: "+cards+" | html в списке: "+routeLen);
-      push("фильтр: "+JSON.stringify(st.filter||{}));
-      push("pVer: "+st.pVer+" | appVer: "+st.appVer);
-      push("закрыто строк: "+list.filter(x=>x.done).length+" | с таймером: "+list.filter(x=>x.start&&!x.end).length);
-      push("leaflet: "+(typeof L));
-      push("ошибок: "+log.filter(x=>/^ERR|^REJ/.test(x)).length);
-      box.style.color = cards? "#9be89b" : "#ff8f8f";
-    }catch(e){ push("DIAG FAIL: "+e.message) }
-  },1200);
-})();
+
 </body>
 </html>
