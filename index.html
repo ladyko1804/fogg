@@ -858,7 +858,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="pharm-9";
+const PRESET_VER="pharm-10";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -967,10 +967,14 @@ function mergePreset(s,date){
   s.days[date]=pre.map(p=>{
     const old=byKey.get(p.tt+"|"+p.proj);
     return {...p,kind:kindOf(p.net),
-      done:old?!!old.done:!!p.done,
-      invDone:old?!!old.invDone:!!p.invDone,
-      start:old?(old.start||null):(p.start||null),
-      end:old?(old.end||null):(p.end||null)};
+      done:(old?!!old.done:false)||!!p.done,
+      invDone:(old?!!old.invDone:false)||!!p.invDone,
+      irDone:(old?!!old.irDone:false)||!!p.irDone,
+      timDone:(old?!!old.timDone:false)||!!p.timDone,
+      oralDone:(old?!!old.oralDone:false)||!!p.oralDone,
+      pnDone:(old?!!old.pnDone:false)||!!p.pnDone,
+      start:old?(old.start||p.start||null):(p.start||null),
+      end:old?(old.end||p.end||null):(p.end||null)};
   });
 }
 function save(){localStorage.setItem("moi-day2",JSON.stringify(state))}
@@ -1846,7 +1850,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v202"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v203"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
