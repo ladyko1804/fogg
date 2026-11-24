@@ -485,7 +485,7 @@ const PRESETS={
   {net:"Магнит ДК",lvl:"Железо",addr:"Северный пр., 113",tt:"163765",proj:"Gillette OSA",hours:"10:00 – 22:00",t:26,la:60.031117,lo:30.341464,tim:"КСО"},
   {net:"Магнит ДК",lvl:"Железо",addr:"Светлановский пр., 14к1",tt:"163822",proj:"Gillette OSA",hours:"08:00 – 22:00",t:26,la:60.0100333,lo:30.3429954,tim:"КСО"},
   {net:"Магнит ДК",lvl:"Железо",addr:"ул. Курчатова, 4",tt:"133519",proj:"Gillette OSA",hours:"08:00 – 22:00",t:20,la:60.0074731,lo:30.3560429,tim:"КСО"},
-  {net:"Магнит ДК",lvl:"Серебро",addr:"Тихорецкий пр., 7к1",tt:"107054",proj:"Gillette OSA",hours:"08:00 – 23:00",t:20,la:60.0134092,lo:30.3692288,tim:"КСО",inv:true},
+  {net:"Магнит ДК",lvl:"Серебро",addr:"Тихорецкий пр., 7к1",tt:"107054",proj:"Gillette OSA",hours:"08:00 – 23:00",t:20,la:60.0134092,lo:30.3692288,tim:"КСО",inv:true,timMarked:true,timDone:true,shelves:1}
   {net:"Магнит ДК",lvl:"Серебро",addr:"Тихорецкий пр., 7к1",tt:"107054",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:7,la:60.0134092,lo:30.3692288},
   {net:"Магнит ДК",lvl:"Медь",addr:"ул. Веденеева, 4",tt:"107063",proj:"Gillette OSA",hours:"08:30 – 22:30",t:20,la:60.0224451,lo:30.3719611,tim:"КСО"},
   {net:"Магнит ДК",lvl:"Медь",addr:"ул. Веденеева, 4",tt:"107063",proj:"Oral Care OSA",hours:"08:30 – 22:30",t:7,la:60.0224451,lo:30.3719611},
@@ -858,7 +858,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="pharm-11";
+const PRESET_VER="pharm-12";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -1857,7 +1857,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v210"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v211"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
