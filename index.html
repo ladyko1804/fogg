@@ -917,6 +917,8 @@ function lvlCls(l){
 function kindOf(net){ if(/КМ/.test(net))return "km"; if(/ДК/.test(net))return "dk"; return "none" }
 
 let state=load();
+const APP_VER="207";
+if(state.appVer!==APP_VER){state.filter={};state.appVer=APP_VER;try{localStorage.setItem("moi-day2",JSON.stringify(state))}catch(e){}}
 (function normalize(){
   if(!state||typeof state!=="object")state={};
   if(!state.days||typeof state.days!=="object")state.days={};
@@ -1721,6 +1723,11 @@ function renderRoute(){
       (isPastDay()?(state.unlock?' · <span id="lock-lnk" style="color:#f0a0a8">правки открыты · закрыть</span>':' · <span id="lock-lnk" style="color:#8fc0ff">день закрыт · править</span>'):"");
   }
   const wrap=document.getElementById("s-route");
+  if(all.length && !groupRows(all).length){
+    wrap.innerHTML='<div class="card"><div class="hint">Под фильтр не попала ни одна точка.</div><div class="chkline"><button class="small" id="btn-unf">Сбросить фильтры</button></div></div>';
+    wrap.querySelector("#btn-unf").onclick=()=>{state.filter={};save();renderRoute();if(mapObj)drawMap()};
+    return;
+  }
   if(!all.length){
     wrap.innerHTML='<div class="card"><div class="hint">На этот день точек нет.</div><div class="chkline">'+
       '<button class="small" id="btn-add-empty">+ Добавить точку</button>'+
@@ -1850,7 +1857,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v206"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v207"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
