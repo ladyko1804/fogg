@@ -1,14 +1,15 @@
-const CACHE="moi-day-v205";
+const CACHE="moi-day-v206";
 const ASSETS=["./index.html","./manifest.json","./icon.svg","./icon-192.png","./icon-512.png"];
+const LOCAL_MAP=["./leaflet/leaflet.js","./leaflet/leaflet.css","https://tile.openstreetmap.org/0/0/0.png"];
 const CDN=[
-  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
-  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+
 ];
 
 self.addEventListener("install",e=>{
   e.waitUntil((async()=>{
     const c=await caches.open(CACHE);
     await c.addAll(ASSETS).catch(()=>{});
+    await c.addAll(LOCAL_MAP).catch(()=>{});
     // библиотека карты — по одной, чтобы одна ошибка не сломала установку
     for(const u of CDN){ try{ await c.add(new Request(u,{mode:"no-cors"})); }catch(_){} }
     await self.skipWaiting();
