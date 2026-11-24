@@ -1,4 +1,4 @@
-const CACHE="moi-day-v204";
+const CACHE="moi-day-v205";
 const ASSETS=["./index.html","./manifest.json","./icon.svg","./icon-192.png","./icon-512.png"];
 const CDN=[
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
@@ -41,7 +41,7 @@ self.addEventListener("fetch",e=>{
   if(isDoc){
     // 3 секунды на сеть: если связи нет или она еле дышит — сразу отдаём сохранённую копию
     e.respondWith((async()=>{
-      const net=await timeoutFetch(req,3000);
+      const net=await timeoutFetch(req,8000);
       if(net){
         const cp=net.clone();
         caches.open(CACHE).then(c=>c.put(req,cp)).catch(()=>{});
@@ -49,7 +49,9 @@ self.addEventListener("fetch",e=>{
       }
       const hit=await caches.match(req);
       if(hit)return hit;
-      return (await caches.match("./index.html"))||Response.error();
+      const fallback=await caches.match("./index.html");
+      if(fallback){ const r=fallback.clone(); return r; }
+      return Response.error();
     })());
     return;
   }
