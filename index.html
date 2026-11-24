@@ -179,6 +179,15 @@ header{position:relative}
 .mpin.done .mnum{background:#8f99a4;color:#12171c;border-color:#5c666f}
 .mpin.done{filter:saturate(.55)}
 .mpin.done svg{filter:grayscale(1) brightness(1.15);opacity:.85}
+.pin2{position:relative;width:32px;height:44px}
+.pin2 .body{position:absolute;left:1px;top:0;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#fff;box-shadow:0 1px 4px #0007;display:grid;place-items:center}
+.pin2 .body>div{transform:rotate(45deg);display:grid;place-items:center}
+.pin2.inv .body{background:#f1c40f}
+.pin2.ir .body{background:#2f6fed}
+.pin2.inv.ir .body{background:#f1c40f;box-shadow:0 0 0 2.5px #2f6fed,0 1px 4px #0007}
+.pin2.done .body{background:#9aa4ae;filter:saturate(.45)}
+.pin2 .num{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);min-width:16px;height:16px;padding:0 3px;border-radius:9px;background:#fff;box-shadow:0 1px 3px #0007;color:#111;font:700 10.5px/16px system-ui;text-align:center;box-sizing:border-box}
+.pin2.done .num{background:#e3e7ea;color:#3b444d}
 .mpin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;position:relative;
   font:700 14px/1 system-ui;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .mnum{position:absolute;left:-9px;top:-9px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:#f1c40f;color:#111;border:1px solid #0b0f14;font:800 10.5px/15px system-ui;text-align:center;box-sizing:border-box}
@@ -1633,7 +1642,8 @@ function drawMap(){
   L.polyline(ll,{color:"#000",weight:3.5,opacity:.9}).addTo(mapObj);
   ps.forEach((p,i)=>{
     const st=netStyle(p.net,p.proj), inv=p.inv, ap=p.approx;
-    const ic=L.divIcon({className:"",html:`<div class="mpin ${inv?"iv":""} ${p.ir?"ir":""} ${ap?"ap":""} ${p.done?"done":""}" style="background:${netLogo(p.net,p.proj,30)?"transparent":(p.done?"#77828f":st.bg)};color:${p.done?"#b9c1c9":st.fg}">${netLogo(p.net,p.proj,30)||st.l}<b class="mnum">${i+1}</b></div>`,iconSize:[30,30],iconAnchor:[15,15]});
+    const logo=netLogo(p.net,p.proj,18)||`<span style="font:700 13px system-ui;color:${st.fg};background:${st.bg};width:18px;height:18px;border-radius:50%;display:grid;place-items:center">${st.l}</span>`;
+    const ic=L.divIcon({className:"",html:`<div class="pin2 ${inv?"inv":""} ${p.ir?"ir":""} ${p.done?"done":""}"><div class="body"><div>${logo}</div></div><div class="num">${i+1}</div></div>`,iconSize:[32,44],iconAnchor:[16,41],popupAnchor:[0,-38]});
     L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
       `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}`+
       `${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}`+
@@ -1818,7 +1828,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v184"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v185"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
