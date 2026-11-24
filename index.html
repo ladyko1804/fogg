@@ -236,6 +236,29 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
 </script>
 </head>
 <body>
+<script>
+(function(){
+  if(!/diag=1/.test(location.search))return;
+  var box=document.createElement("div");
+  box.style.cssText="position:fixed;left:0;right:0;top:0;z-index:99999;background:#160c0c;color:#ff9a9a;font:12px/1.4 monospace;padding:8px;max-height:50vh;overflow:auto;white-space:pre-wrap";
+  function add(t){ if(!box.parentNode)document.body.appendChild(box); box.textContent+=(box.textContent?"\n":"")+t }
+  window.addEventListener("error",function(e){ add("ОШИБКА: "+e.message+" @ "+(e.lineno||"?")) });
+  window.addEventListener("unhandledrejection",function(e){ add("ОШИБКА: "+(e.reason&&e.reason.message||e.reason)) });
+  setTimeout(function(){
+    try{
+      var st=JSON.parse(localStorage.getItem("moi-day2")||"{}");
+      var d=st.active||"?", list=(st.days&&st.days[d])||[];
+      add("версия: "+(document.body.innerHTML.match(/версия v(\d+)/)||["?"])[0]);
+      add("день: "+d+" | строк: "+list.length);
+      add("карточек в списке: "+document.querySelectorAll("#s-route .card").length);
+      add("фильтр: "+JSON.stringify(st.filter||{}));
+      add("закрыто: "+list.filter(function(x){return x.done}).length);
+      add((box.textContent.indexOf("ОШИБКА")>=0)?"":"ошибок нет");
+    }catch(e){ add("СБОЙ: "+e.message) }
+  },1500);
+})();
+</script>
+
 <header>
   <div class="h1line"><span id="h-date">Сегодня</span> <span id="h-dow" class="dow">—</span></div>
   <div class="sub" id="h-sub">—</div>
@@ -1806,7 +1829,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v213"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v214"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
