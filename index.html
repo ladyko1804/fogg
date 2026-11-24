@@ -355,7 +355,7 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
       <button id="cal-next">›</button>
     </div>
     <div class="cal" id="cal-grid"></div>
-    <div class="hint">Сверху — число визитов в маршруте, снизу синим — открытые точки, зелёным — отправленные отчёты. Нажми на день, чтобы открыть его маршрут.</div>
+    <div class="hint" id="cal-lockline"></div>
   </div>
 </section>
 
@@ -1791,7 +1791,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v164"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v165"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
@@ -1875,6 +1875,14 @@ function go(t){document.querySelector(`nav a[data-tab="${t}"]`).click()}
 
 /* ---------- календарь ---------- */
 function renderCal(){
+  const ll=document.getElementById("cal-lockline");
+  if(ll){
+    const d=state.active, past=d<todayISO;
+    ll.innerHTML=!past?"":(state.unlock?'<span id="cal-lock" style="color:#f0a0a8">'+d.split("-").reverse().slice(0,2).join(".")+' — правки открыты · закрыть</span>':'<span id="cal-lock" style="color:#8fc0ff">'+d.split("-").reverse().slice(0,2).join(".")+' — день закрыт · править</span>');
+    const cl=document.getElementById("cal-lock");
+    if(cl)cl.onclick=()=>{if(state.unlock){state.unlock=false;renderCal();renderRoute();return}
+      if(confirm("Открыть день для правок?")){state.unlock=true;renderCal();renderRoute();}};
+  }
   const y=state.calY,m=state.calM;
   document.getElementById("cal-month").textContent=`${MONTHS[m]}, ${y}`;
   const grid=document.getElementById("cal-grid");grid.innerHTML="";
