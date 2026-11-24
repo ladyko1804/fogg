@@ -179,6 +179,8 @@ header{position:relative}
 .mpin.done .mnum{background:#8f99a4;color:#12171c;border-color:#5c666f}
 .mpin.done{filter:saturate(.55)}
 .mpin.done svg{filter:grayscale(1) brightness(1.15);opacity:.85}
+.popbtn{font:600 12px system-ui;padding:7px 10px;border-radius:9px;border:1px solid #2f3d4d;background:#1b2735;color:#cfe3ff;cursor:pointer}
+.popbtn.primary{background:#1f6feb;border-color:#2f7bf5;color:#fff}
 .pin2{position:relative;width:32px;height:44px}
 .pin2 .body{position:absolute;left:1px;top:0;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#fff;box-shadow:0 1px 4px #0007;display:grid;place-items:center}
 .pin2 .body>div{transform:rotate(45deg);display:grid;place-items:center}
@@ -1595,6 +1597,19 @@ function fillMapFilters(){
   me.onclick=()=>{ if(!state.me){drawMe();return} mapObj.setView([state.me.la,state.me.lo],17); };
   document.getElementById("map-f-reset").onclick=()=>{state.filter={};save();drawMap();renderRoute()};
 }
+function startVisitByTt(tt){
+  const list=pts(state.active);
+  const rows=list.filter(x=>String(x.tt)===String(tt));
+  if(!rows.length)return;
+  const now=new Date().toISOString();
+  rows.forEach(x=>{ if(!x.start){x.start=now;x.end=null;x.done=false;} });
+  save();renderRoute();
+}
+document.addEventListener("click",e=>{
+  const st=e.target.closest("[data-start]"), gt=e.target.closest("[data-goto]");
+  if(st){ const tt=st.dataset.start; if(!canEdit()){alert("День закрыт — нажми «править» в шапке");return;} startVisitByTt(tt); gotoCard(tt); }
+  if(gt){ gotoCard(gt.dataset.goto); }
+});
 let meLayer=null;
 function drawMe(){
   if(!mapObj)return;
@@ -1650,7 +1665,8 @@ function drawMap(){
       `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}`+
       `${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}`+
       `${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}`+
-      `<br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`);
+      `<br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`+
+      `<div style="margin-top:8px;display:flex;gap:6px"><button class="popbtn primary" data-start="${p.tt}">Начать визит</button><button class="popbtn" data-goto="${p.tt}">Карточка</button></div>`);
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
 }
@@ -1830,7 +1846,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v195"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v197"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
