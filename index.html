@@ -341,7 +341,6 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <span class="chip2" id="map-f-me">где я?</span>
   <span class="chip2" id="map-f-reset">Сбросить</span>
 </div>
-<div class="legend"><span><b class="l-red"></b>не закрыт</span><span><b class="l-grn"></b>закрыт</span><span><b class="l-inv"></b>инвент</span><span><b class="l-ph"></b>личное дело</span></div>
   <div id="map"></div>
 </div>
 
@@ -1802,7 +1801,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v168"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v169"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
