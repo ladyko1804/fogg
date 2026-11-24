@@ -496,7 +496,7 @@ const PRESETS={
   {net:"Магнит ДК",lvl:"Медь",addr:"Северный пр., 75к1",tt:"107050",proj:"Oral Care OSA",hours:"08:30 – 22:00",t:7,la:60.0199871,lo:30.4118589},
   {net:"Перекресток",lvl:"Медь",addr:"Гражданский пр., 41",tt:"107045",proj:"Gillette OSA",hours:"10:00 – 22:00",t:70,la:60.0113497,lo:30.3979586,inv:true},
   {net:"Перекресток",lvl:"Медь",addr:"Гражданский пр., 41",tt:"107045",proj:"Oral Care OSA",hours:"10:00 – 22:00",t:17,la:60.0113497,lo:30.3979586},
-  {net:"Магнит КМ",lvl:"Золото",addr:"пр. Науки, 44",tt:"106977",proj:"Gillette",hours:"09:30 – 21:30",t:41,la:60.0061306,lo:30.4270035,tim:"КМ1"}
+  {net:"Магнит КМ",lvl:"Золото",addr:"пр. Науки, 44",tt:"106977",proj:"Gillette",hours:"09:30 – 21:30",t:41,la:60.0061306,lo:30.4270035,tim:"КМ1",start:"2026-11-24T14:48:00.000Z",end:null,done:false}
  ],
  "2026-11-02":[
 
@@ -858,7 +858,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="pharm-10";
+const PRESET_VER="pharm-11";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -1857,7 +1857,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v208"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v209"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
