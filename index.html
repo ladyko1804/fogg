@@ -180,7 +180,9 @@ header{position:relative}
 .mpin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;position:relative;
   font:700 14px/1 system-ui;border:2px solid #0b0f14;box-shadow:0 1px 5px #000a}
 .mnum{position:absolute;left:-9px;top:-9px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:#f1c40f;color:#111;border:1px solid #0b0f14;font:800 10.5px/15px system-ui;text-align:center;box-sizing:border-box}
-.mpin.iv{box-shadow:0 0 0 3px #c0392b,0 1px 5px #000a}
+.mpin.iv{box-shadow:0 0 0 3px #f1c40f,0 1px 5px #000a}
+.mpin.ir{box-shadow:0 0 0 3px #2f6fed,0 1px 5px #000a}
+.mpin.iv.ir{box-shadow:0 0 0 3px #f1c40f,0 0 0 6px #2f6fed,0 1px 5px #000a}
 .mpin.ap{outline:2px dashed #9fb0c4;outline-offset:2px}
 .pin .lg{position:absolute;right:-8px;bottom:-8px;width:16px;height:16px;border-radius:50%;
   background:#fff;font:700 10px/16px system-ui;text-align:center;box-shadow:0 1px 3px #0008}
@@ -338,6 +340,8 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div id="mapfilters">
   <select id="map-f-net"></select>
   <span class="chip2" id="map-f-inv">Инвент</span>
+  <span class="chip2" id="map-f-ir">IR</span>
+  <span class="chip2" id="map-f-tim">ТИМ</span>
   <span class="chip2" id="map-f-me">где я?</span>
   <span class="chip2" id="map-f-reset">Сбросить</span>
 </div>
@@ -1045,6 +1049,8 @@ function passFilter(p){
   const f=state.filter||{};
   if(f.net&&String(p.net)!==String(f.net))return false;
   if(f.inv&&!(p.inv&&!p.invClosed))return false;
+  if(f.ir&&!p.ir)return false;
+  if(f.tim&&!/ДК|КМ/.test(String(p.net||"")))return false;
   return true;
 }
 function resetFilters(){state.filter={};state.keepTt=null;save();renderRoute();if(mapObj)drawMap();}
@@ -1055,7 +1061,7 @@ function mapPoints(){
     if(typeof passFilter==="function"&&!passFilter(p))return;
     const la=(p.la!=null?p.la:(baseOf(p.tt)||{}).la), lo=(p.lo!=null?p.lo:(baseOf(p.tt)||{}).lo);
     if(la==null||lo==null)return;
-    out.push({tt:p.tt,net:p.net,proj:p.proj,addr:p.addr,hours:p.hours,la:+la,lo:+lo,done:p.done,inv:!!p.inv,approx:!!p.approx});
+    out.push({tt:p.tt,net:p.net,proj:p.proj,addr:p.addr,hours:p.hours,la:+la,lo:+lo,done:p.done,inv:!!(p.inv&&!p.invClosed),ir:!!(p.ir&&!p.irDone),approx:!!p.approx});
   });
   return out;
 }
@@ -1576,6 +1582,10 @@ function fillMapFilters(){
   const inv=document.getElementById("map-f-inv");
   inv.className="chip2"+(f.inv?" sel":"");
   inv.onclick=()=>{state.filter=state.filter||{};state.filter.inv=!state.filter.inv;save();drawMap()};
+  const irb=document.getElementById("map-f-ir");
+  if(irb){irb.className="chip2"+(f.ir?" sel":"");irb.onclick=()=>{state.filter=state.filter||{};state.filter.ir=!state.filter.ir;save();drawMap()}}
+  const tb=document.getElementById("map-f-tim");
+  if(tb){tb.className="chip2"+(f.tim?" sel":"");tb.onclick=()=>{state.filter=state.filter||{};state.filter.tim=!state.filter.tim;save();drawMap()}}
   const me=document.getElementById("map-f-me");
   me.onclick=()=>{ if(!state.me){drawMe();return} mapObj.setView([state.me.la,state.me.lo],17); };
   document.getElementById("map-f-reset").onclick=()=>{state.filter={};save();drawMap();renderRoute()};
@@ -1613,10 +1623,10 @@ function drawMap(){
     });
   }
   const ll=ps.map(p=>[p.la,p.lo]);
-  L.polyline(ll,{color:"#4a7bb5",weight:4,opacity:.85}).addTo(mapObj);
+  L.polyline(ll,{color:"#000",weight:3.5,opacity:.9}).addTo(mapObj);
   ps.forEach((p,i)=>{
     const st=netStyle(p.net,p.proj), inv=p.inv, ap=p.approx;
-    const ic=L.divIcon({className:"",html:`<div class="mpin ${inv?"iv":""} ${ap?"ap":""} ${p.done?"done":""}" style="background:${p.done?"#77828f":st.bg};color:${p.done?"#b9c1c9":st.fg}">${st.l}<b class="mnum">${i+1}</b></div>`,iconSize:[30,30],iconAnchor:[15,15]});
+    const ic=L.divIcon({className:"",html:`<div class="mpin ${inv?"iv":""} ${p.ir?"ir":""} ${ap?"ap":""} ${p.done?"done":""}" style="background:${p.done?"#77828f":st.bg};color:${p.done?"#b9c1c9":st.fg}">${st.l}<b class="mnum">${i+1}</b></div>`,iconSize:[30,30],iconAnchor:[15,15]});
     L.marker([p.la,p.lo],{icon:ic}).addTo(mapObj).bindPopup(
       `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}`+
       `${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}`+
@@ -1801,7 +1811,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v169"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v170"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
