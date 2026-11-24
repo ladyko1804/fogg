@@ -1034,7 +1034,7 @@ function netLogo(net,proj,size){
   const wrap=(inner,extra)=>`<svg viewBox="0 0 40 40" width="${S}" height="${S}" style="display:block;${extra||""}">${inner}</svg>`;
   if(/Косметик|КМ/i.test(n))return wrap(`<rect x="0.5" y="0.5" width="39" height="39" rx="9" fill="#ec1e9b"/><text x="20" y="27" font-size="16" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">МК</text>`);
   if(/Пятёрочка|Пятерочка/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#e31e24"/><text x="20" y="29" font-size="25" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">5</text><path d="M25 5c6 2 9 6 9 11-5-2-8-5-9-11z" fill="#7ac143"/>`);
-  if(/Перекр/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#fff"/><g fill="#3fae2a" transform="translate(0,0) scale(0.86) translate(3.2,3.2)"><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(90 20 20)"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(180 20 20)"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(270 20 20)"/></g>`);
+  if(/Перекр/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#fff"/><g transform="scale(0.8) translate(5,5)"><path d="M20 16.9 L14.6 10.8 A8.2 8.2 0 1 1 25.4 10.8 Z" fill="#43a047"/><path d="M20 16.9 L14.6 10.8 A8.2 8.2 0 1 1 25.4 10.8 Z" fill="#2e7d32" transform="rotate(90 20 20)"/><path d="M20 16.9 L14.6 10.8 A8.2 8.2 0 1 1 25.4 10.8 Z" fill="#1b5e20" transform="rotate(180 20 20)"/><path d="M20 16.9 L14.6 10.8 A8.2 8.2 0 1 1 25.4 10.8 Z" fill="#8bc34a" transform="rotate(270 20 20)"/></g>`);
   if(/Верный/i.test(n))return wrap(`<rect x="1.5" y="1.5" width="37" height="37" rx="11" fill="#e31e24"/><text x="20" y="29" font-size="24" font-style="italic" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">В</text><path d="M8 33.5c7 2.5 17 2.5 24 0" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>`);
   if(/Магнит/i.test(n))return wrap(`<rect x="0.5" y="0.5" width="39" height="39" rx="9" fill="#e2001a"/><text x="20" y="29" font-size="22" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">М</text>`);
   if(/Дикси/i.test(n))return wrap(`<defs><clipPath id="dx${S}"><circle cx="20" cy="20" r="18"/></clipPath></defs><circle cx="20" cy="20" r="18" fill="#f5821f"/><g clip-path="url(#dx${S})"><ellipse cx="20" cy="41" rx="18" ry="10" fill="#8bc53f"/></g><text x="20" y="26" font-size="17" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">Д</text>`);
@@ -1818,7 +1818,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v182"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v183"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
