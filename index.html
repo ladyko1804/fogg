@@ -1018,7 +1018,7 @@ function netStyle(net,proj){
   if(/Дикси/i.test(n))return {bg:"#f57c00",fg:"#fff",l:"Д"};
   if(/Косметик|КМ/i.test(n))return {bg:"#ec1e9b",fg:"#fff",l:"МК"};
   if(/Магнит/i.test(n))return {bg:"#c62828",fg:"#fff",l:"М"};
-  if(/Перекр/i.test(n))return {bg:"#2e7d32",fg:"#fff",l:"П"};
+  if(/Перекр/i.test(n))return wrap(`<g fill="#3fae2a"><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(90 20 20)"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(180 20 20)"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(270 20 20)"/></g>`);
   if(/Верный/i.test(n))return {bg:"#1b7f3a",fg:"#e53935",l:"В"};
   if(/Подружка/i.test(n))return {bg:"#ad1457",fg:"#fff",l:"П"};
   if(/РивГош/i.test(n))return {bg:"#6a1b9a",fg:"#fff",l:"Р"};
@@ -1031,12 +1031,12 @@ function netLogo(net,proj,size){
   const n=String(net||"")+" "+String(proj||"");
   const S=size||22;
   const wrap=(inner,extra)=>`<svg viewBox="0 0 40 40" width="${S}" height="${S}" style="display:block;${extra||""}">${inner}</svg>`;
-  if(/Косметик|КМ/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#ec1e9b"/><text x="20" y="25" font-size="15" font-weight="700" fill="#fff" text-anchor="middle" font-family="system-ui,Arial">МК</text>`);
+  if(/Косметик|КМ/i.test(n))return wrap(`<rect x="0.5" y="0.5" width="39" height="39" rx="8" fill="#ec1e9b"/><rect x="7.5" y="7.5" width="25" height="25" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><text x="20" y="26" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="system-ui,Arial">МК</text>`);
   if(/Пятёрочка|Пятерочка/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#e31e24"/><text x="20" y="29" font-size="25" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">5</text><path d="M25 5c6 2 9 6 9 11-5-2-8-5-9-11z" fill="#7ac143"/>`);
-  if(/Перекр/i.test(n))return wrap(`<circle cx="20" cy="11.5" r="8.2" fill="#57b947"/><circle cx="28.5" cy="20" r="8.2" fill="#2e7d32"/><circle cx="20" cy="28.5" r="8.2" fill="#1b5e20"/><circle cx="11.5" cy="20" r="8.2" fill="#9ccc65"/>`);
+  if(/Перекр/i.test(n))return wrap(`<g fill="#3fae2a"><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(90 20 20)"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(180 20 20)"/><path d="M20 20 C14.5 15.5 14 8.5 20 2.5 C26 8.5 25.5 15.5 20 20 Z" transform="rotate(270 20 20)"/></g>`);
   if(/Верный/i.test(n))return wrap(`<rect x="1.5" y="1.5" width="37" height="37" rx="11" fill="#e31e24"/><text x="20" y="29" font-size="24" font-style="italic" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">В</text><path d="M8 33.5c7 2.5 17 2.5 24 0" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>`);
-  if(/Магнит/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#c62828"/><text x="20" y="28" font-size="22" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">М</text>`);
-  if(/Дикси/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#f57c00"/><text x="20" y="27" font-size="20" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">Д</text>`);
+  if(/Магнит/i.test(n))return wrap(`<rect x="0.5" y="0.5" width="39" height="39" rx="8" fill="#e2001a"/><rect x="7.5" y="7.5" width="25" height="25" rx="6" fill="none" stroke="#fff" stroke-width="3"/><text x="20" y="27" font-size="15" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">М</text>`);
+  if(/Дикси/i.test(n))return wrap(`<defs><clipPath id="dx${S}"><circle cx="20" cy="20" r="18"/></clipPath></defs><circle cx="20" cy="20" r="18" fill="#f5821f"/><g clip-path="url(#dx${S})"><ellipse cx="20" cy="38" rx="17" ry="9" fill="#8bc53f"/></g><text x="20" y="26" font-size="17" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif">Д</text>`);
   if(/МВидео|М\.Видео/i.test(n))return wrap(`<rect x="1.5" y="1.5" width="37" height="37" rx="6" fill="#e2001a"/><text x="19" y="28.5" font-size="25" font-style="italic" font-weight="700" fill="#fff" text-anchor="middle" font-family="Georgia,serif">М</text><circle cx="32" cy="27" r="2.6" fill="#fff"/>`);
   if(/Эльдорадо/i.test(n))return wrap(`<rect x="1.5" y="1.5" width="37" height="37" rx="6" fill="#fff"/><text x="21" y="31" font-size="28" font-weight="700" fill="#e30613" text-anchor="middle" font-family="Arial,sans-serif">Э</text><path d="M17 12l-7 11h5l-2 8 9-12h-5l2-7z" fill="#fff"/>`);
   if(/РивГош/i.test(n))return wrap(`<circle cx="20" cy="20" r="19" fill="#8e1b6e"/><text x="20" y="26" font-size="16" font-weight="700" fill="#fff" text-anchor="middle" font-family="system-ui,Arial">РГ</text>`);
@@ -1817,7 +1817,7 @@ function renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v174"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v175"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
