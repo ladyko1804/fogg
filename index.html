@@ -1701,7 +1701,7 @@ function startVisitByTt(tt){
   const rows=list.filter(x=>String(x.tt)===String(tt));
   if(!rows.length)return;
   const now=new Date().toISOString();
-  rows.forEach(x=>{ if(!x.start){x.start=now;x.end=null;x.done=false;} });
+  rows.filter(x=>!/oral/i.test(x.proj||"")).forEach(x=>{ if(!x.start){x.start=now;x.end=null;x.done=false;} });
   save();renderRoute();
 }
 document.addEventListener("click",e=>{
@@ -1910,10 +1910,13 @@ function _renderRoute(){
               const tstr=plan?`${plan}${fact!==null?" / "+fact:""}`:(fact!==null?String(fact):"");
               const othersRunning=rows.some(y=>y!==x&&y.start&&!y.end);
               const isOral=/oral/i.test(x.proj);
-              const gilDone=rows.filter(y=>!/oral/i.test(y.proj)).every(y=>!!y.end);
-              const blocked=othersRunning;
+              const gilRows=rows.filter(y=>!/oral/i.test(y.proj));
+              const gilEnded=gilRows.length&&gilRows.every(y=>!!y.end);
+              const gilEndTs=gilRows.reduce((m,y)=>Math.max(m,y.end?new Date(y.end).getTime():0),0);
+              const oralWait=isOral&&gilEnded?Math.max(0,Math.ceil((60000-(Date.now()-gilEndTs))/1000)):0;
+              const blocked=othersRunning||(isOral&&(!gilEnded||oralWait>0));
               const grpDone=rows.filter(r=>r.proj===nm).every(r=>r.done);
-              const btn=!x.start?(grpDone?`<button class="chk past" disabled>${nm}</button>`:`<button class="primary small" ${(blocked||isPast)?"disabled style=opacity:.4":""} data-pstart="${(blocked||isPast)?"":idxs[ix]}">${nm} — начать</button>`)
+              const btn=!x.start?(grpDone?`<button class="chk past" disabled>${nm}</button>`:`<button class="primary small" ${(blocked||isPast)?"disabled style=opacity:.4":""} data-pstart="${(blocked||isPast)?"":idxs[ix]}">${isOral&&!gilEnded?nm+" — после Gillette":(isOral&&oralWait>0?nm+" — через "+oralWait+" с":nm+" — начать")}</button>`)
                 :(!x.end?`<button class="ok small" ${isPast?"disabled style=opacity:.4":""} data-pend="${isPast?"":idxs[ix]}">${nm} — закончила</button>`
                 :`<span class="pname fin">${nm}</span>`);
               const cc=`<button class="small cmtbtn ${x.comment?"has":""}" data-cmt="${idxs[ix]}" title="Комментарий по проекту">${x.comment?"💬✓":"💬"}</button>`;
@@ -1942,7 +1945,11 @@ function _renderRoute(){
     const box=document.createElement("div");box.id="donebox";
     if(!state.doneOpen)box.style.display="none";
     doneEls.forEach(e=>box.appendChild(e));
-    wrap.appendChild(box);
+    if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
+    clearTimeout(window._oralTick);
+    window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
+  }
+  wrap.appendChild(box);
   }
 
   // итоги дня одним текстом — чтобы переслать ассистенту
@@ -1950,8 +1957,12 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v223"}));
-    wrap.appendChild(box);
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v225"}));
+    if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
+    clearTimeout(window._oralTick);
+    window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
+  }
+  wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     const bst=box.querySelector("#btn-stats"); if(bst)bst.onclick=openStats;
     box.querySelector("#btn-backup").onclick=openBackup;
