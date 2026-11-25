@@ -1648,12 +1648,22 @@ function openStats(){
   }).sort((a,b)=>b.left-a.left||a.net.localeCompare(b.net));
   const monName=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"][+mon.slice(5,7)-1];
   const w=document.createElement("div"); w.className="statwrap on";
-  w.innerHTML='<div class="sheet"><div class="sheet-head"><b>Статистика · '+monName+' '+mon.slice(0,4)+'</b><button id="st-close">Закрыть</button></div>'+
+  w.innerHTML='<div class="sheet"><div class="sheet-head"><b>Статистика · '+monName+' '+mon.slice(0,4)+'</b><button id="st-copy">Копировать</button> <button id="st-save">Скачать</button> <button id="st-close">Закрыть</button></div>'+
     '<div class="st-search"><input id="st-q" placeholder="Поиск: код glz_ или адрес"><span id="st-clear">Сбросить</span></div>'+
     '<div class="st-hints" id="st-hints"></div><div class="st-wrap" id="st-body"></div>'+
     '<div class="hint" style="padding:8px 14px">Нажми на число — увидишь даты визитов.</div></div>';
   document.body.appendChild(w);
   w.querySelector("#st-close").onclick=()=>w.remove();
+  w.querySelector("#st-save").onclick=()=>{
+    const head=["Магазин","Код","Адрес","Периодичность","Визитов","Осталось","Даты визитов"];
+    const rr=all.map(r=>[r.net,"glz_"+r.tt,r.addr,r.per||"",r.dates.length,r.plan?r.left:"",r.dates.map(d=>d.split("-").reverse().slice(0,2).join(".")).join(", ")]);
+    const ok=saveTextFile("Статистика-"+mon+".csv", toCSV(head,rr));
+    if(!ok)copyText(toCSV(head,rr));
+  };
+  w.querySelector("#st-copy").onclick=()=>{
+    const head=["Магазин","Код","Адрес","Периодичность","Визитов","Осталось"];
+    copyText(toCSV(head, all.map(r=>[r.net,"glz_"+r.tt,r.addr,r.per||"",r.dates.length,r.plan?r.left:""])));
+  };
   w.onclick=e=>{ if(e.target===w)w.remove(); };
   const body=w.querySelector("#st-body"), hints=w.querySelector("#st-hints"), qi=w.querySelector("#st-q");
   function rowHtml(r){
@@ -1699,6 +1709,25 @@ function openStats(){
   apply();
 }
 
+function saveTextFile(name, text){
+  try{
+    const blob=new Blob(["\ufeff"+text],{type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove()},1500);
+    return true;
+  }catch(e){ return false }
+}
+function toCSV(headers, rows){
+  const esc=v=>{const s=String(v==null?"":v); return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  return [headers.map(esc).join(";")].concat(rows.map(r=>r.map(esc).join(";"))).join("\n");
+}
+function copyText(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(()=>{}); return }
+  const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select();
+  try{document.execCommand("copy")}catch(e){} ta.remove();
+}
 function monthHistory(mon){
   const map={};
   Object.keys(state.days||{}).filter(d=>d.slice(0,7)===mon).sort().forEach(d=>{
@@ -1720,11 +1749,21 @@ function openHistory(){
   const monName=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"][+mon.slice(5,7)-1];
   const fmt=d=>d.split("-").reverse().slice(0,2).join(".");
   const w=document.createElement("div"); w.className="statwrap on";
-  w.innerHTML='<div class="sheet"><div class="sheet-head"><b>История · '+monName+' '+mon.slice(0,4)+'</b><button id="h-close">Закрыть</button></div>'+
+  w.innerHTML='<div class="sheet"><div class="sheet-head"><b>История · '+monName+' '+mon.slice(0,4)+'</b><button id="h-copy">Копировать</button> <button id="h-save">Скачать</button> <button id="h-close">Закрыть</button></div>'+
     '<div class="st-search"><input id="h-q" placeholder="Поиск: код glz_ или адрес"><span id="h-clear">Сбросить</span></div>'+
     '<div class="st-hints" id="h-hints"></div><div class="st-wrap" id="h-body"></div></div>';
   document.body.appendChild(w);
   w.querySelector("#h-close").onclick=()=>w.remove();
+  w.querySelector("#h-save").onclick=()=>{
+    const head=["Магазин","Код","Адрес","Визиты (даты)","Инвент (даты)","IR (даты)"];
+    const rr=rows.map(r=>[r.net,"glz_"+r.tt,r.addr,r.visits.map(fmt).join(", "),r.inv.map(fmt).join(", "),r.ir.map(fmt).join(", ")]);
+    const ok=saveTextFile("История-"+mon+".csv", toCSV(head,rr));
+    if(!ok)copyText(toCSV(head,rr));
+  };
+  w.querySelector("#h-copy").onclick=()=>{
+    const head=["Магазин","Код","Адрес","Визиты (даты)","Инвент (даты)","IR (даты)"];
+    copyText(toCSV(head, rows.map(r=>[r.net,"glz_"+r.tt,r.addr,r.visits.map(fmt).join(", "),r.inv.map(fmt).join(", "),r.ir.map(fmt).join(", ")])));
+  };
   w.onclick=e=>{ if(e.target===w)w.remove(); };
   const body=w.querySelector("#h-body"), hints=w.querySelector("#h-hints"), qi=w.querySelector("#h-q");
   const cell=(arr)=>arr.length?`<span class="h-dates">${arr.map(fmt).join(", ")}</span>`:`<span style="color:#5d6b7a">—</span>`;
@@ -2023,7 +2062,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v228"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v229"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
