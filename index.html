@@ -507,15 +507,15 @@ const PRESETS={
   {net:"Магнит КМ",lvl:"Золото",addr:"пр. Науки, 44",tt:"106977",proj:"Gillette",hours:"09:30 – 21:30",t:41,la:60.0061306,lo:30.4270035,tim:"КМ1"}
  ],
  "2026-11-25":[
-  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский пр., 75к7",tt:"107072",proj:"Gillette OSA",hours:"08:00 – 23:00",t:20,la:60.0171969,lo:30.4030046,tim:"КСО"},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский пр., 75к7",tt:"107072",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:7,la:60.0171969,lo:30.4030046},
-  {net:"Магнит КМ",lvl:"Серебро",addr:"пр. Науки, 15к1",tt:"106974",proj:"Gillette",hours:"10:09 – 22:00",t:39,la:60.016053,lo:30.380235,tim:"КМ1"},
-  {net:"Магнит КМ",lvl:"Серебро",addr:"пр. Науки, 15к1",tt:"106974",proj:"Oral Care",hours:"10:09 – 22:00",t:17,la:60.016053,lo:30.380235},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",hours:"08:00 – 23:00",t:20,la:59.9993123,lo:30.3662115,tim:"КСО"},
-  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:7,la:59.9993123,lo:30.3662115},
-  {net:"Магнит ДК",lvl:"Медь",addr:"2-й Муринский пр., 51",tt:"107070",proj:"Gillette OSA",hours:"08:30 – 22:30",t:25,la:59.9978995,lo:30.3608089,tim:"КСО"},
-  {net:"Магнит ДК",lvl:"Медь",addr:"2-й Муринский пр., 51",tt:"107070",proj:"Oral Care OSA",hours:"08:30 – 22:30",t:7,la:59.9978995,lo:30.3608089},
-  {net:"Полить цветы",lvl:"—",addr:"",tt:"p_flowers",proj:"Личное дело",t:10,la:59.973307,lo:30.429155,note:"Личное дело"}
+  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский пр., 75к7",tt:"107072",proj:"Gillette OSA",hours:"08:00 – 23:00",t:20,la:60.0171969,lo:30.4030046,done:true,sent:true,tim:"КСО",timMarked:true,timDone:false,timReason:"запрет директора"},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Гражданский пр., 75к7",tt:"107072",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:7,la:60.0171969,lo:30.4030046,done:true,oralDone:true},
+  {net:"Магнит КМ",lvl:"Серебро",addr:"пр. Науки, 15к1",tt:"106974",proj:"Gillette",hours:"10:09 – 22:00",t:39,la:60.016053,lo:30.380235,done:true,sent:true,tim:"КМ1",timMarked:true,timDone:false,timReason:"другое",pnDone:true,pnFaces:12},
+  {net:"Магнит КМ",lvl:"Серебро",addr:"пр. Науки, 15к1",tt:"106974",proj:"Oral Care",hours:"10:09 – 22:00",t:17,la:60.016053,lo:30.380235,done:true,tim:"КМ1",oralDone:true},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",hours:"08:00 – 23:00",t:20,la:59.9993123,lo:30.3662115,done:true,sent:true,tim:"КСО",timMarked:true,timDone:false,timReason:"запрет директора"},
+  {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:7,la:59.9993123,lo:30.3662115,done:true,oralDone:true},
+  {net:"Магнит ДК",lvl:"Медь",addr:"2-й Муринский пр., 51",tt:"107070",proj:"Gillette OSA",hours:"08:30 – 22:30",t:25,la:59.9978995,lo:30.3608089,done:true,sent:true,tim:"КСО",timMarked:true,timDone:true,shelves:1,invDone:true},
+  {net:"Магнит ДК",lvl:"Медь",addr:"2-й Муринский пр., 51",tt:"107070",proj:"Oral Care OSA",hours:"08:30 – 22:30",t:7,la:59.9978995,lo:30.3608089,done:true,oralDone:true},
+  {net:"Полить цветы",lvl:"—",addr:"",tt:"p_flowers",proj:"Личное дело",t:10,la:59.973307,lo:30.429155,note:"Личное дело",done:true}
  ],
  "2026-11-02":[
 
@@ -877,7 +877,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="2411-close";
+const PRESET_VER="2511-done";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -1957,7 +1957,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v226"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v227"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
