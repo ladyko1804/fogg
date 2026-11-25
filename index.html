@@ -478,7 +478,8 @@ const PRESETS={
   {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Gillette OSA",hours:"08:00 – 23:00",t:20,la:59.9993123,lo:30.3662115,tim:"КСО"},
   {net:"Магнит ДК",lvl:"Золото",addr:"Политехническая, 17к1",tt:"107064",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:7,la:59.9993123,lo:30.3662115},
   {net:"Магнит ДК",lvl:"Медь",addr:"2-й Муринский пр., 51",tt:"107070",proj:"Gillette OSA",hours:"08:30 – 22:30",t:25,la:59.9978995,lo:30.3608089,tim:"КСО"},
-  {net:"Магнит ДК",lvl:"Медь",addr:"2-й Муринский пр., 51",tt:"107070",proj:"Oral Care OSA",hours:"08:30 – 22:30",t:7,la:59.9978995,lo:30.3608089}
+  {net:"Магнит ДК",lvl:"Медь",addr:"2-й Муринский пр., 51",tt:"107070",proj:"Oral Care OSA",hours:"08:30 – 22:30",t:7,la:59.9978995,lo:30.3608089},
+  {net:"Полить цветы",lvl:"—",addr:"",tt:"p_flowers",proj:"Личное дело",t:10,la:59.973307,lo:30.429155,note:"Личное дело"}
  ],
  "2026-11-02":[
 
@@ -840,7 +841,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="2511-2";
+const PRESET_VER="2511-3";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -1839,7 +1840,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v218"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v219"}));
     wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     box.querySelector("#btn-backup").onclick=openBackup;
