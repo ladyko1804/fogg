@@ -227,6 +227,7 @@ table.st td{padding:8px 6px;border-bottom:1px solid #1c2632;vertical-align:top}
 .st-search input{flex:1;background:#0f141a;color:#e6edf5;border:1px solid #2b3846;border-radius:10px;padding:9px 10px;font:14px system-ui}
 .st-search span{font-size:12px;color:#8fc0ff}
 .st-hints{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px}
+.h-dates{color:#cfe3ff;font-size:11.5px;line-height:1.35}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -1698,6 +1699,64 @@ function openStats(){
   apply();
 }
 
+function monthHistory(mon){
+  const map={};
+  Object.keys(state.days||{}).filter(d=>d.slice(0,7)===mon).sort().forEach(d=>{
+    (state.days[d]||[]).forEach(p=>{
+      const tt=String(p.tt);
+      if(!map[tt])map[tt]={net:p.net,addr:p.addr,visits:[],inv:[],ir:[]};
+      if(p.done&&!map[tt].visits.includes(d))map[tt].visits.push(d);
+      if(p.invDone&&!map[tt].inv.includes(d))map[tt].inv.push(d);
+      if(p.irDone&&!map[tt].ir.includes(d))map[tt].ir.push(d);
+    });
+  });
+  return map;
+}
+function openHistory(){
+  const mon=(state.active||todayISO).slice(0,7);
+  const data=monthHistory(mon);
+  const rows=Object.entries(data).map(([tt,x])=>({tt,...x}))
+    .sort((a,b)=>(b.visits.length-a.visits.length)||(b.inv.length-a.inv.length)||(b.ir.length-a.ir.length)||a.net.localeCompare(b.net));
+  const monName=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"][+mon.slice(5,7)-1];
+  const fmt=d=>d.split("-").reverse().slice(0,2).join(".");
+  const w=document.createElement("div"); w.className="statwrap on";
+  w.innerHTML='<div class="sheet"><div class="sheet-head"><b>История · '+monName+' '+mon.slice(0,4)+'</b><button id="h-close">Закрыть</button></div>'+
+    '<div class="st-search"><input id="h-q" placeholder="Поиск: код glz_ или адрес"><span id="h-clear">Сбросить</span></div>'+
+    '<div class="st-hints" id="h-hints"></div><div class="st-wrap" id="h-body"></div></div>';
+  document.body.appendChild(w);
+  w.querySelector("#h-close").onclick=()=>w.remove();
+  w.onclick=e=>{ if(e.target===w)w.remove(); };
+  const body=w.querySelector("#h-body"), hints=w.querySelector("#h-hints"), qi=w.querySelector("#h-q");
+  const cell=(arr)=>arr.length?`<span class="h-dates">${arr.map(fmt).join(", ")}</span>`:`<span style="color:#5d6b7a">—</span>`;
+  function paint(list){
+    if(!list.length){ body.innerHTML='<div class="hint" style="padding:14px">Нет данных за этот месяц.</div>'; return }
+    body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>Визиты</th><th>Инвент</th><th>IR</th></tr></thead><tbody>'+
+      list.map(r=>`<tr><td><b>${r.net}</b><br><span class="st-addr">${r.addr}</span><br><span class="st-code">glz_${r.tt}</span></td>`+
+        `<td>${cell(r.visits)}</td><td>${cell(r.inv)}</td><td>${cell(r.ir)}</td></tr>`).join('')+'</tbody></table>';
+  }
+  function apply(){
+    const q=(qi.value||"").trim().toLowerCase(); hints.innerHTML="";
+    if(!q){ paint(rows); return }
+    const digits=q.replace(/\D/g,"");
+    const found=rows.filter(r=>{
+      const byCode=(digits&&r.tt.includes(digits))||("glz_"+r.tt).includes(q);
+      return byCode||(r.addr||"").toLowerCase().includes(q)||(r.net||"").toLowerCase().includes(q);
+    });
+    const byAddr=new Map();
+    found.forEach(r=>{const k=(r.addr||"").toLowerCase(); if(!byAddr.has(k))byAddr.set(k,[]); byAddr.get(k).push(r)});
+    const multi=[...byAddr.values()].filter(v=>v.length>1);
+    if(multi.length&&!digits){
+      const list=multi.flat();
+      hints.innerHTML='<span class="hint" style="align-self:center">На этом адресе несколько магазинов:</span>'+
+        list.map(r=>`<span class="chip2" data-pick="${r.tt}">${r.net}</span>`).join("");
+      hints.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{qi.value="glz_"+b.dataset.pick;apply()});
+    }
+    paint(found);
+  }
+  qi.oninput=apply;
+  w.querySelector("#h-clear").onclick=()=>{qi.value="";apply()};
+  apply();
+}
 function startVisitByTt(tt){
   const list=pts(state.active);
   const rows=list.filter(x=>String(x.tt)===String(tt));
@@ -1962,7 +2021,7 @@ function _renderRoute(){
   // итоги дня одним текстом — чтобы переслать ассистенту
   {
     const box=document.createElement("div");box.className="card";
-    box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button></div>
+    box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
     box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v228"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
@@ -1972,6 +2031,7 @@ function _renderRoute(){
   wrap.appendChild(box);
     box.querySelector("#btn-add").onclick=openAdd;
     const bst=box.querySelector("#btn-stats"); if(bst)bst.onclick=openStats;
+    const bhs=box.querySelector("#btn-hist"); if(bhs)bhs.onclick=openHistory;
     box.querySelector("#btn-backup").onclick=openBackup;
     box.querySelector("#btn-copy").onclick=()=>{
       const t=dayText();
