@@ -1914,9 +1914,9 @@ function _renderRoute(){
               const gilEnded=gilRows.length&&gilRows.every(y=>!!y.end);
               const gilEndTs=gilRows.reduce((m,y)=>Math.max(m,y.end?new Date(y.end).getTime():0),0);
               const oralWait=isOral&&gilEnded?Math.max(0,Math.ceil((60000-(Date.now()-gilEndTs))/1000)):0;
-              const blocked=othersRunning||(isOral&&(!gilEnded||oralWait>0));
+              const blocked=othersRunning;
               const grpDone=rows.filter(r=>r.proj===nm).every(r=>r.done);
-              const btn=!x.start?(grpDone?`<button class="chk past" disabled>${nm}</button>`:`<button class="primary small" ${(blocked||isPast)?"disabled style=opacity:.4":""} data-pstart="${(blocked||isPast)?"":idxs[ix]}">${isOral&&!gilEnded?nm+" — после Gillette":(isOral&&oralWait>0?nm+" — через "+oralWait+" с":nm+" — начать")}</button>`)
+              const btn=!x.start?(grpDone?`<button class="chk past" disabled>${nm}</button>`:`<button class="primary small" ${(blocked||isPast)?"disabled style=opacity:.4":""} data-pstart="${(blocked||isPast)?"":idxs[ix]}">${nm} — начать</button>`)
                 :(!x.end?`<button class="ok small" ${isPast?"disabled style=opacity:.4":""} data-pend="${isPast?"":idxs[ix]}">${nm} — закончила</button>`
                 :`<span class="pname fin">${nm}</span>`);
               const cc=`<button class="small cmtbtn ${x.comment?"has":""}" data-cmt="${idxs[ix]}" title="Комментарий по проекту">${x.comment?"💬✓":"💬"}</button>`;
@@ -1957,7 +1957,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v225"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v226"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2013,7 +2013,17 @@ function _renderRoute(){
     save();renderRoute();
   });
   wrap.querySelectorAll("[data-oral]").forEach(b=>b.onclick=()=>{if(!canEdit()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.oral))[0].tt;const g=rowsOf(b.dataset.oral);const w=gRows(g).filter(p=>/oral/i.test(p.proj||""));const v=!w.every(p=>p.oralDone);w.forEach(p=>p.oralDone=v);save();renderRoute()});
-  wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
+  wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{
+    const pp=pts(state.active)[+b.dataset.pstart];
+    if(pp&&/oral/i.test(pp.proj||"")){
+      const gil=pts(state.active).filter(y=>String(y.tt)===String(pp.tt)&&!/oral/i.test(y.proj||""));
+      const ended=gil.length&&gil.every(y=>!!y.end);
+      const endTs=gil.reduce((m,y)=>Math.max(m,y.end?new Date(y.end).getTime():0),0);
+      const secs=ended?Math.round((Date.now()-endTs)/1000):null;
+      if(!ended&&!confirm("Gillette в этой точке ещё не закрыт. Всё равно начать Oral?"))return;
+      if(ended&&secs<60&&!confirm("После Gillette прошло "+secs+" с. По правилу Oral не раньше минуты. Всё равно начать?"))return;
+    }
+    const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
   wrap.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pend];p.end=new Date().toISOString();p.done=true;save();renderRoute()});
   wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.start));g.forEach(p=>{p.start=new Date().toISOString();p.end=null});save();renderRoute()});
   wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.end));const now=new Date().toISOString();g.forEach(p=>{p.end=now;p.done=true});save();renderRoute()});
