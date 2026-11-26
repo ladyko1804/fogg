@@ -1731,8 +1731,8 @@ function openStats(){
   document.body.appendChild(w);
   w.querySelector("#st-close").onclick=()=>w.remove();
   w.querySelector("#st-save").onclick=()=>{
-    const head=["Магазин","Код","Адрес","Периодичность","Визитов","Инвентов","IR","Осталось","Даты визитов"];
-    const rr=all.map(r=>[r.net,"glz_"+r.tt,r.addr,r.per||"",r.dates.length,(r.inv||[]).length,(r.ir||[]).length,r.plan?r.left:"",r.dates.map(d=>d.split("-").reverse().slice(0,2).join(".")).join(", ")]);
+    const head=["Магазин","Код","Адрес","План","Была","Осталось","Даты визитов"];
+    const rr=all.map(r=>[r.net,"glz_"+r.tt,r.addr,r.plan||"",r.dates.length,r.plan?r.left:"",r.dates.map(d=>d.split("-").reverse().slice(0,2).join(".")).join(", ")]);
     const ok=saveTextFile("Статистика-"+mon+".csv", toCSV(head,rr));
     if(!ok)copyText(toCSV(head,rr));
   };
@@ -1744,18 +1744,15 @@ function openStats(){
   const body=w.querySelector("#st-body"), hints=w.querySelector("#st-hints"), qi=w.querySelector("#st-q");
   function rowHtml(r){
     return `<tr><td><b>${r.net}</b><br><span class="st-addr">${r.addr}</span><br><span class="st-code">glz_${r.tt}</span></td>`+
-      `<td>${r.per||"—"}</td>`+
+      `<td>${r.plan||"—"}</td>`+
       `<td><button class="st-num" data-dates="${r.tt}">${r.dates.length}</button></td>`+
-      `<td>${(r.inv||[]).length||"—"}</td>`+
-      `<td>${(r.ir||[]).length||"—"}</td>`+
       `<td style="color:${r.left?"#ffb4b4":"#8fd6a0"}">${r.plan?r.left:"—"}</td></tr>`;
   }
   function paint(list){
     if(!list.length){ body.innerHTML='<div class="hint" style="padding:14px">Ничего не найдено.</div>'; return }
     const tv=list.reduce((a,r)=>a+r.dates.length,0), tl=list.reduce((a,r)=>a+(r.plan?r.left:0),0);
-    body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>Периодичность</th><th>Была</th><th>Инвент</th><th>IR</th><th>Осталось</th></tr></thead><tbody>'+
-      list.map(rowHtml).join("")+'</tbody><tfoot><tr class="tot"><td>Итого: '+list.length+' маг.</td><td></td><td>'+tv+'</td>'+
-      '<td>'+list.reduce((a,r)=>a+(r.inv||[]).length,0)+'</td><td>'+list.reduce((a,r)=>a+(r.ir||[]).length,0)+'</td><td>'+tl+'</td></tr></tfoot></table>';
+    body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>План</th><th>Была</th><th>Осталось</th></tr></thead><tbody>'+
+      list.map(rowHtml).join("")+'</tbody><tfoot><tr class="tot"><td>Итого: '+list.length+' маг.</td><td>'+list.reduce((a,r)=>a+(r.plan||0),0)+'</td><td>'+tv+'</td><td>'+tl+'</td></tr></tfoot></table>';
     body.querySelectorAll("[data-dates]").forEach(b=>b.onclick=()=>{
       const r=data[b.dataset.dates];
       alert(r.net+"\n"+r.dates.map(d=>d.split("-").reverse().slice(0,2).join(".")).join(", "));
@@ -2164,9 +2161,9 @@ function _renderRoute(){
   // итоги дня одним текстом — чтобы переслать ассистенту
   {
     const box=document.createElement("div");box.className="card";
-    box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button><button class="small" id="btn-hist">История за месяц</button></div>
+    box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v241"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v242"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
