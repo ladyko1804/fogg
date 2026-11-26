@@ -235,6 +235,8 @@ table.st td{padding:8px 6px;border-bottom:1px solid #1c2632;vertical-align:top}
 .irbtn{background:#1b2735;border:1px solid #2f3d4d;color:#cfe3ff;border-radius:11px;padding:11px 12px;font:600 13.5px system-ui;text-align:left}
 .irbtn.sel{border-color:#3f7fd0;background:#1d3350}
 .irbtn.ghost{background:transparent;color:#8fa2b6;text-align:center}
+table.st tfoot td{padding:10px 6px;font-weight:700;border-top:1px solid #2b3a4a;background:#16202b}
+tr.tot td{color:#cfe3ff}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -1650,9 +1652,12 @@ function monthVisitDates(mon){
   Object.keys(state.days||{}).filter(d=>d.slice(0,7)===mon).forEach(d=>{
     (state.days[d]||[]).forEach(p=>{
       if(!p.done)return;
+      if(/^p/i.test(String(p.tt))||/Личн/i.test(p.proj||""))return;
       const tt=String(p.tt);
-      if(!map[tt])map[tt]={dates:[],net:p.net,addr:p.addr,per:p.per||""};
+      if(!map[tt])map[tt]={dates:[],net:p.net,addr:p.addr,per:p.per||"",inv:[],ir:[]};
       if(!map[tt].dates.includes(d))map[tt].dates.push(d);
+      if(p.invDone&&!map[tt].inv.includes(d))map[tt].inv.push(d);
+      if(p.irDone&&!p.irSkip&&!map[tt].ir.includes(d))map[tt].ir.push(d);
       if(!map[tt].per)map[tt].per=p.per||(baseOf(tt)||{}).pe||"";
     });
   });
@@ -1675,8 +1680,8 @@ function openStats(){
   document.body.appendChild(w);
   w.querySelector("#st-close").onclick=()=>w.remove();
   w.querySelector("#st-save").onclick=()=>{
-    const head=["Магазин","Код","Адрес","Периодичность","Визитов","Осталось","Даты визитов"];
-    const rr=all.map(r=>[r.net,"glz_"+r.tt,r.addr,r.per||"",r.dates.length,r.plan?r.left:"",r.dates.map(d=>d.split("-").reverse().slice(0,2).join(".")).join(", ")]);
+    const head=["Магазин","Код","Адрес","Периодичность","Визитов","Инвентов","IR","Осталось","Даты визитов"];
+    const rr=all.map(r=>[r.net,"glz_"+r.tt,r.addr,r.per||"",r.dates.length,(r.inv||[]).length,(r.ir||[]).length,r.plan?r.left:"",r.dates.map(d=>d.split("-").reverse().slice(0,2).join(".")).join(", ")]);
     const ok=saveTextFile("Статистика-"+mon+".csv", toCSV(head,rr));
     if(!ok)copyText(toCSV(head,rr));
   };
@@ -1690,12 +1695,16 @@ function openStats(){
     return `<tr><td><b>${r.net}</b><br><span class="st-addr">${r.addr}</span><br><span class="st-code">glz_${r.tt}</span></td>`+
       `<td>${r.per||"—"}</td>`+
       `<td><button class="st-num" data-dates="${r.tt}">${r.dates.length}</button></td>`+
+      `<td>${(r.inv||[]).length||"—"}</td>`+
+      `<td>${(r.ir||[]).length||"—"}</td>`+
       `<td style="color:${r.left?"#ffb4b4":"#8fd6a0"}">${r.plan?r.left:"—"}</td></tr>`;
   }
   function paint(list){
     if(!list.length){ body.innerHTML='<div class="hint" style="padding:14px">Ничего не найдено.</div>'; return }
-    body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>Периодичность</th><th>Была</th><th>Осталось</th></tr></thead><tbody>'+
-      list.map(rowHtml).join("")+'</tbody></table>';
+    const tv=list.reduce((a,r)=>a+r.dates.length,0), tl=list.reduce((a,r)=>a+(r.plan?r.left:0),0);
+    body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>Периодичность</th><th>Была</th><th>Инвент</th><th>IR</th><th>Осталось</th></tr></thead><tbody>'+
+      list.map(rowHtml).join("")+'</tbody><tfoot><tr class="tot"><td>Итого: '+list.length+' маг.</td><td></td><td>'+tv+'</td>'+
+      '<td>'+list.reduce((a,r)=>a+(r.inv||[]).length,0)+'</td><td>'+list.reduce((a,r)=>a+(r.ir||[]).length,0)+'</td><td>'+tl+'</td></tr></tfoot></table>';
     body.querySelectorAll("[data-dates]").forEach(b=>b.onclick=()=>{
       const r=data[b.dataset.dates];
       alert(r.net+"\n"+r.dates.map(d=>d.split("-").reverse().slice(0,2).join(".")).join(", "));
@@ -1752,6 +1761,7 @@ function monthHistory(mon){
   const map={};
   Object.keys(state.days||{}).filter(d=>d.slice(0,7)===mon).sort().forEach(d=>{
     (state.days[d]||[]).forEach(p=>{
+      if(/^p/i.test(String(p.tt))||/Личн/i.test(p.proj||""))return;
       const tt=String(p.tt);
       if(!map[tt])map[tt]={net:p.net,addr:p.addr,visits:[],inv:[],ir:[]};
       if(p.done&&!map[tt].visits.includes(d))map[tt].visits.push(d);
@@ -1791,7 +1801,9 @@ function openHistory(){
     if(!list.length){ body.innerHTML='<div class="hint" style="padding:14px">Нет данных за этот месяц.</div>'; return }
     body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>Визиты</th><th>Инвент</th><th>IR</th></tr></thead><tbody>'+
       list.map(r=>`<tr><td><b>${r.net}</b><br><span class="st-addr">${r.addr}</span><br><span class="st-code">glz_${r.tt}</span></td>`+
-        `<td>${cell(r.visits)}</td><td>${cell(r.inv)}</td><td>${cell(r.ir)}</td></tr>`).join('')+'</tbody></table>';
+        `<td>${cell(r.visits)}</td><td>${cell(r.inv)}</td><td>${cell(r.ir)}</td></tr>`).join('')+
+      '</tbody><tfoot><tr class="tot"><td>Итого: '+list.length+' маг.</td><td>'+list.reduce((a,r)=>a+r.visits.length,0)+'</td>'+
+      '<td>'+list.reduce((a,r)=>a+r.inv.length,0)+'</td><td>'+list.reduce((a,r)=>a+r.ir.length,0)+'</td></tr></tfoot></table>';
   }
   function apply(){
     const q=(qi.value||"").trim().toLowerCase(); hints.innerHTML="";
@@ -2106,7 +2118,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v234"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v237"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
