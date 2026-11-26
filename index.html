@@ -1558,6 +1558,13 @@ async function geocode(q){
   return [null,null];
 }
 let addPicked=[];
+function addrKey(a){
+  const s=String(a||"").toLowerCase().replace(/ё/g,"е");
+  const stop=["пр","ул","д","корп","корпус","лит","литера","бульвар","проспект","улица","переулок","шоссе","наб","набережная"];
+  const w=(s.match(/[а-яa-z]+/g)||[]).filter(x=>!stop.includes(x))[0]||"";
+  const nums=(s.match(/\d+/g)||[]);
+  return w+"|"+(nums[0]||"");
+}
 function baseFind(q){
   const s=String(q||"").trim().toLowerCase().replace(/ё/g,"е");
   if(!s)return [];
@@ -1636,12 +1643,22 @@ function renderNetSugg(q){
 function renderAddrSugg(q){
   const box=document.getElementById("addr-sugg"); if(!box)return;
   box.innerHTML="";
-  const s=String(q||"").trim();
+  const s2=String(q||"").trim();
+  const s=s2;
   if(s.length<2)return;
   const net=(document.getElementById("add-net").value||"").trim();
   let list=baseFind(s);
   if(net){ const byNet=list.filter(b=>b.n===net); if(byNet.length)list=byNet; }
   if(!list.length){ box.innerHTML='<div class="hint">Нет такой точки в базе — можно добавить вручную</div>'; return; }
+  const k0=addrKey(s2);
+  const same=list.filter(b=>addrKey(b.a)===k0&&(!net||b.n===net));
+  if(same.length===1){
+    const b=same[0]; addBase=b;
+    document.getElementById("add-net").value=b.n;
+    document.getElementById("add-coord").value=(b.la&&b.lo)?`${b.la}, ${b.lo}`:"";
+    box.innerHTML=`<div class="hint" style="color:#8fd6a0">подтянул: ${b.n} · ${b.a} · ${b.h||"—"} · ${b.l||"—"} · ${b.pe||""}</div>`;
+    return;
+  }
   list.forEach(b=>{
     const it=document.createElement("div"); it.className="sugg-item";
     it.innerHTML=`<b>${b.n}</b> · <span>${b.a}</span><div class="sugg-code">glz_${String(b.i).replace(/\D/g,"")} · ${b.h||"—"} · ${b.l||"—"}</div>`;
@@ -1708,7 +1725,14 @@ async function saveAdd(){
     list.push({net:net||"Личное дело", lvl:"—", addr, tt, proj:"Личное дело", hours:"—", tim:"—",
                t:null, la, lo, kind:"none", done:false, ...(cmt?{comment:cmt}:{})});
   }else{
-    const b=addBase;
+    let b=addBase;
+    if(!b){
+      const cands=baseFind(addr);
+      const kk=addrKey(addr);
+      const exact=cands.filter(x=>addrKey(x.a)===kk);
+      const pool=exact.length?exact:(net?cands.filter(x=>x.n===net):cands);
+      if(pool.length===1)b=pool[0]; else if(cands.length===1)b=cands[0];
+    }
     const tt=b?String(b.i).replace(/\D/g,""):("n"+Date.now().toString().slice(-6));
     const nm=b?b.n:(net||"Магазин");
     const proj=/Oral/i.test(nm)?"Oral Care OSA":(/КМ|Пятёрочка|Дикси/i.test(nm)?"Gillette":"Gillette OSA");
@@ -2292,7 +2316,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v259"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v261"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
