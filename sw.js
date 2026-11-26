@@ -1,4 +1,4 @@
-const CACHE="moi-day-v241";
+const CACHE="moi-day-v242";
 const ASSETS=["./index.html","./manifest.json","./icon.svg","./icon-192.png","./icon-512.png"];
 const LOCAL_MAP=["./leaflet/leaflet.js","./leaflet/leaflet.css","https://tile.openstreetmap.org/0/0/0.png"];
 const CDN=[
