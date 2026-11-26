@@ -247,6 +247,11 @@ tr.tot td{color:#cfe3ff}
 .picked{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .picked-chip{background:#1d3350;border:1px solid #3f7fd0;border-radius:999px;padding:4px 9px;font-size:12px;color:#cfe3ff;display:inline-flex;gap:6px;align-items:center}
 .picked-chip b{cursor:pointer;color:#9fc3ff}
+
+.markrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0}
+.markrow span{font-size:13px;color:#c7d3e0}
+.chipbtn{background:#1b2836;border:1px solid #33465c;color:#cfe3ff;border-radius:999px;padding:7px 14px;font-size:12.5px;cursor:pointer}
+.chipbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -257,7 +262,6 @@ document.getElementById("rpt-send").onclick=sendRpt;
 document.getElementById("inv-ok").onclick=saveInv;
 document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
-document.getElementById("add-from-codes").onclick=quickAdd;
 document.getElementById("opt-ok").onclick=runOpt;
 document.getElementById("todo-ok").onclick=saveTodo;
 document.getElementById("todo-cancel").onclick=()=>document.getElementById("todowrap").classList.remove("on");
@@ -343,27 +347,28 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
   <div class="cmtbox">
     <div class="cmthead">Новая точка</div>
     <div class="chips" id="add-kind"></div>
-    <div id="add-codes-wrap">
-      <label>Быстро: коды магазинов через запятую или с новой строки</label>
-      <textarea id="add-codes" placeholder="glz_107061, 107062, 107064" style="width:100%;min-height:64px;background:#0f141a;color:#e6edf5;border:1px solid var(--line);border-radius:9px;padding:9px;font:13.5px/1.4 system-ui"></textarea>
-      <div id="add-sugg" class="sugg"></div>
-      <div id="add-picked" class="picked"></div>
-      <div class="chkline"><button class="primary small" id="add-from-codes">Добавить</button></div>
-      <div class="hint">Введи код или адрес — ниже появятся варианты, нажми нужный.</div>
+
+    <div id="add-work-box">
+      <label>Сеть</label>
+      <input id="add-net" placeholder="начни вводить: М" autocomplete="off">
+      <div id="net-sugg" class="sugg"></div>
     </div>
-    <div id="add-fields">
-      <label id="add-net-label">Сеть или название</label><input id="add-net" placeholder="Магнит ДК / Аптека / Личное">
-      <label>Адрес</label><input id="add-addr" placeholder="улица, дом">
-      <label>Координаты (не обязательно) — можно вставить ссылку или «59.98, 30.33»</label>
-      <input id="add-coord" placeholder="59.9821, 30.3187">
-      <label>Комментарий (не обязательно)</label><input id="add-comment" placeholder="что угодно: что купить, что уточнить">
-      <div id="add-work" style="display:none">
-        <label>ID / код</label><input id="add-id" placeholder="glz_107999 или цифры">
-        <label>Проект</label><input id="add-proj" placeholder="Gillette OSA">
-        <label>Инвентаризация</label><div class="chips" id="add-inv"></div>
-        <label>IR</label><div class="chips" id="add-ir"></div>
-      </div>
+
+    <label>Адрес</label>
+    <input id="add-addr" placeholder="улица, дом" autocomplete="off">
+    <div id="addr-sugg" class="sugg"></div>
+
+    <label>Координаты (не обязательно) — ссылка или «59.98, 30.33»</label>
+    <input id="add-coord" placeholder="59.9821, 30.3187">
+    <label>Комментарий (не обязательно)</label>
+    <input id="add-comment" placeholder="что угодно: что купить, что уточнить">
+
+    <div id="add-marks">
+      <div class="markrow"><span>Инвентаризация</span><button class="chipbtn" data-mark="inv">добавить</button></div>
+      <div class="markrow"><span>IR</span><button class="chipbtn" data-mark="ir">добавить</button></div>
+      <div class="markrow"><span>Oral</span><button class="chipbtn" data-mark="oral">добавить</button></div>
     </div>
+
     <div class="cmtfoot"><button id="add-ok" class="primary small">Добавить</button><button id="add-cancel" class="small">Отмена</button></div>
     <div class="hint" id="add-status"></div>
   </div>
@@ -1568,90 +1573,123 @@ function renderPicked(){
   }).join("");
   box.querySelectorAll("[data-rm]").forEach(x=>x.onclick=()=>{addPicked.splice(+x.dataset.rm,1);renderPicked()});
 }
+let addMarks={inv:false,ir:false,oral:false};
+let addBase=null;
+const NETS_EXTRA=["Магнит ММ"];
+function netList(){
+  const seen=new Set();
+  BASE.forEach(b=>seen.add(b.n));
+  NETS_EXTRA.forEach(n=>seen.add(n));
+  return [...seen];
+}
+function renderNetSugg(q){
+  const box=document.getElementById("net-sugg"); if(!box)return;
+  const s=String(q||"").trim().toLowerCase().replace(/ё/g,"е");
+  box.innerHTML="";
+  if(!s)return;
+  const list=netList().filter(n=>n.toLowerCase().replace(/ё/g,"е").includes(s))
+    .sort((a,b)=>a.length-b.length).slice(0,8);
+  list.forEach(n=>{
+    const it=document.createElement("div"); it.className="sugg-item"; it.innerHTML=`<b>${n}</b>`;
+    it.onclick=()=>{ document.getElementById("add-net").value=n; box.innerHTML=""; document.getElementById("add-addr").focus(); };
+    box.appendChild(it);
+  });
+}
+function renderAddrSugg(q){
+  const box=document.getElementById("addr-sugg"); if(!box)return;
+  box.innerHTML="";
+  const s=String(q||"").trim();
+  if(s.length<2)return;
+  const net=(document.getElementById("add-net").value||"").trim();
+  let list=baseFind(s);
+  if(net){ const byNet=list.filter(b=>b.n===net); if(byNet.length)list=byNet; }
+  if(!list.length){ box.innerHTML='<div class="hint">Нет такой точки в базе — можно добавить вручную</div>'; return; }
+  list.forEach(b=>{
+    const it=document.createElement("div"); it.className="sugg-item";
+    it.innerHTML=`<b>${b.n}</b> · <span>${b.a}</span><div class="sugg-code">glz_${String(b.i).replace(/\D/g,"")} · ${b.h||"—"} · ${b.l||"—"}</div>`;
+    it.onclick=()=>{
+      addBase=b;
+      document.getElementById("add-net").value=b.n;
+      document.getElementById("add-addr").value=b.a;
+      document.getElementById("add-coord").value=(b.la&&b.lo)?`${b.la}, ${b.lo}`:"";
+      box.innerHTML=""; document.getElementById("net-sugg").innerHTML="";
+    };
+    box.appendChild(it);
+  });
+}
 function openAdd(){
-  addKind=null;addInv=null;addIr=null;addPicked=[];
-  const ci=document.getElementById("add-codes");
-  if(ci&&!ci._wired){ ci._wired=true; ci.addEventListener("input",e=>renderSugg(e.target.value)); }
-  renderSugg(""); renderPicked();
-  ["add-net","add-addr","add-id","add-proj"].forEach(id=>document.getElementById(id).value="");
+  addKind=null;addBase=null;addMarks={inv:false,ir:false,oral:false};
+  ["add-net","add-addr","add-coord","add-comment"].forEach(id=>{const el=document.getElementById(id); if(el)el.value=""});
   document.getElementById("add-status").textContent="";
+  document.getElementById("net-sugg").innerHTML="";
+  document.getElementById("addr-sugg").innerHTML="";
+  document.querySelectorAll("#add-marks .chipbtn").forEach(b=>b.classList.remove("on"));
   const kd=document.getElementById("add-kind");kd.innerHTML="";
   [["work","Работа"],["private","Личное дело"]].forEach(([v,txt])=>{
     const c=document.createElement("div");c.className="chip";c.textContent=txt;
     c.onclick=()=>{addKind=v;[...kd.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
-      const work=(v==="work");
-      document.getElementById("add-work").style.display=work?"block":"none";
-      document.getElementById("add-codes-wrap").style.display=work?"block":"none";
-      document.getElementById("add-net-label").textContent=work?"Сеть или название":"Название";
-      document.getElementById("add-net").placeholder=work?"Магнит ДК / Аптека / Личное":"Лермонтовский пр., аптека";};
+      document.getElementById("add-work-box").style.display=(v==="work")?"block":"none";
+      document.getElementById("add-marks").style.display=(v==="work")?"block":"none";
+      document.getElementById("add-net").placeholder=(v==="work")?"начни вводить: М":"Аптека / Личное";
+      document.getElementById("add-addr").placeholder=(v==="work")?"улица, дом":"улица, дом";
+      addBase=null;};
     kd.appendChild(c);
   });
-  [["add-inv",["надо","не надо"],x=>addInv=x],["add-ir",["надо","не надо"],x=>addIr=x]].forEach(([id,vals,set])=>{
-    const host=document.getElementById(id);host.innerHTML="";
-    vals.forEach(v=>{const c=document.createElement("div");c.className="chip";c.textContent=v;
-      c.onclick=()=>{set(v);[...host.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel")};host.appendChild(c)});
-  });
-  document.getElementById("add-work").style.display="none";
-  document.getElementById("add-codes-wrap").style.display="none";
-  document.getElementById("add-net-label").textContent="Сеть или название";
-  document.getElementById("addwrap").classList.add("on");
-}
-function quickAdd(){
-  const st=document.getElementById("add-status");
-  const raw=document.getElementById("add-codes").value||"";
-  let codes=[...new Set((raw.match(/\d{3,}/g)||[]))];
-  if(addPicked.length)codes=[...new Set(addPicked.map(x=>String(x).replace(/\D/g,"")))];
-  if(!codes.length&&(raw||"").trim()){ // ввели не код, а адрес/сеть — берём первый вариант
-    const f=baseFind(raw); if(f.length)codes=[f[0].i.replace(/\D/g,"")];
+  const ni=document.getElementById("add-net");
+  if(ni&&!ni._wired){ ni._wired=true;
+    ni.addEventListener("input",e=>{addBase=null;renderNetSugg(e.target.value)});
+    ni.addEventListener("blur",()=>setTimeout(()=>{const b=document.getElementById("net-sugg");if(b)b.innerHTML=""},180));
   }
-  if(!codes.length){st.innerHTML='<span class="warn">Не вижу кодов — выбери точку из списка или введи код</span>';return}
-  const list=pts(state.active).slice();
-  const have=new Set(list.map(x=>String(x.tt)));
-  let added=0, skipped=0;
-  codes.forEach(code=>{
-    if(have.has(code)){skipped++;return}
-    const b=BASE.find(x=>x.i.replace(/\D/g,"")===code)||BASE.find(x=>x.i.replace(/\D/g,"").endsWith(code));
-    if(!b){skipped++;return}
-    const net=b.n, lvl=b.l;
-    const proj=/КМ|Пятёрочка|Дикси/i.test(net)?"Gillette":"Gillette OSA";
-    list.push({net, lvl, addr:b.a, tt:code, proj, hours:b.h, tim:timFor(net,lvl), t:null,
-               la:b.la, lo:b.lo, kind:kindOf(net), done:false, ...(b.c?{note:b.c}:{})});
-    have.add(code); added++;
+  const ai=document.getElementById("add-addr");
+  if(ai&&!ai._wired){ ai._wired=true;
+    ai.addEventListener("input",e=>{if(!document.getElementById("add-addr").value.trim())addBase=null;renderAddrSugg(e.target.value)});
+    ai.addEventListener("blur",()=>setTimeout(()=>{const b=document.getElementById("addr-sugg");if(b)b.innerHTML=""},220));
+  }
+  document.querySelectorAll("#add-marks .chipbtn").forEach(b=>{
+    b.onclick=()=>{ const k=b.dataset.mark; addMarks[k]=!addMarks[k]; b.classList.toggle("on",addMarks[k]);
+      b.textContent=addMarks[k]?"добавлено ✓":"добавить"; };
   });
-  state.days[state.active]=list;
-  save();
-  document.getElementById("add-codes").value="";addPicked=[];
-  st.innerHTML='<span class="ok">Добавлено: '+added+(skipped?" · пропущено: "+skipped:"")+'</span>';
-  renderRoute();
+  document.getElementById("addwrap").classList.add("on");
 }
 async function saveAdd(){
   const st=document.getElementById("add-status");
-  const net=document.getElementById("add-net").value.trim();
-  const addr=document.getElementById("add-addr").value.trim();
-  if(!addKind){st.innerHTML='<span class="warn">Выбери: работа или личное</span>';return}
-  if(!net||!addr){st.innerHTML='<span class="warn">Нужны название и адрес</span>';return}
+  const net=(document.getElementById("add-net").value||"").trim();
+  const addr=(document.getElementById("add-addr").value||"").trim();
+  const cmt=(document.getElementById("add-comment").value||"").trim();
+  if(!addKind){st.innerHTML='<span class="warn">Выбери: Работа или Личное дело</span>';return}
+  if(!addr){st.innerHTML='<span class="warn">Нужен адрес</span>';return}
+  let la=null,lo=null;
   const manual=parseCoords(document.getElementById("add-coord").value);
-  st.textContent=manual?"Беру указанные координаты…":"Ищу адрес на карте…";
-  const [la,lo]=manual||await geocode(addr);
-  let tt,proj,tim,inv=false;
+  if(manual){[la,lo]=manual}
+  else if(addBase&&addBase.la){la=addBase.la;lo=addBase.lo}
+  else if(addKind==="work"){ st.textContent="Ищу адрес на карте…"; try{[la,lo]=await geocode(addr)}catch(e){} }
+
+  const list=pts(state.active).slice();
   if(addKind==="private"){
-    tt="p"+Date.now().toString().slice(-6); proj="Личное дело"; tim="—";
-    if(!document.getElementById("add-net").value.trim())net="Личное дело";
-    if(!net)net="Личное";
+    const tt="p"+Date.now().toString().slice(-6);
+    list.push({net:net||"Личное дело", lvl:"—", addr, tt, proj:"Личное дело", hours:"—", tim:"—",
+               t:null, la, lo, kind:"none", done:false, ...(cmt?{comment:cmt}:{})});
   }else{
-    const raw=document.getElementById("add-id").value.trim();
-    tt=raw.replace(/\D/g,"")||("n"+Date.now().toString().slice(-6));
-    proj=document.getElementById("add-proj").value.trim()||"Gillette OSA";
-    tim=/КМ/i.test(net)?"КМ1":(/ДК/i.test(net)?"КСО":"—");
-    inv=(addInv==="надо");
+    const b=addBase;
+    const tt=b?String(b.i).replace(/\D/g,""):("n"+Date.now().toString().slice(-6));
+    const nm=b?b.n:(net||"Магазин");
+    const proj=/Oral/i.test(nm)?"Oral Care OSA":(/КМ|Пятёрочка|Дикси/i.test(nm)?"Gillette":"Gillette OSA");
+    const baseRow={net:nm, lvl:(b&&b.l)||"—", addr:(b&&b.a)||addr, tt, proj,
+      hours:(b&&b.h)||"—", tim:(b&&timFor)?timFor(nm,(b&&b.l)||"—"):timFor(nm,"—"),
+      t:null, la:(la!=null?la:(b?b.la:null)), lo:(lo!=null?lo:(b?b.lo:null)),
+      kind:kindOf(nm), done:false};
+    if(b&&b.c)baseRow.note=b.c;
+    if(b&&b.pe)baseRow.per=b.pe;
+    if(b&&b.p)baseRow.prio=b.p;
+    if(addMarks.inv)baseRow.inv=true;
+    if(addMarks.ir)baseRow.ir=true;
+    if(cmt)baseRow.comment=cmt;
+    list.push(baseRow);
+    if(addMarks.oral)list.push({net:nm, lvl:baseRow.lvl, addr:baseRow.addr, tt, proj:"Oral Care OSA",
+      hours:baseRow.hours, tim:"—", t:null, la:baseRow.la, lo:baseRow.lo, kind:baseRow.kind, done:false,
+      ...(b&&b.pe?{per:b.pe}:{})});
   }
-  const row={net, lvl:"—", addr, tt, proj, hours:"—", tim, t:null, la:la, lo:lo};
-  if(inv)row.inv=true;
-  const cmt=document.getElementById("add-comment").value.trim();
-  if(cmt)row.comment=cmt;
-  if(addIr==="надо")row.ir=true;
-  if(la==null||lo==null){st.innerHTML='<span class="warn">Адрес не нашёлся. Пришли геометку — вставь в поле координат «59.98, 30.31» и нажми «Добавить» ещё раз.</span>';}
-  state.days[state.active]=pts(state.active).concat([{...row,kind:kindOf(net),done:false}]);
+  state.days[state.active]=list;
   save();
   document.getElementById("addwrap").classList.remove("on");
   renderRoute();
@@ -2185,7 +2223,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v244"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v247"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2486,7 +2524,6 @@ document.getElementById("rpt-send").onclick=sendRpt;
 document.getElementById("inv-ok").onclick=saveInv;
 document.getElementById("tim-ok").onclick=saveTim;
 document.getElementById("add-ok").onclick=saveAdd;
-document.getElementById("add-from-codes").onclick=quickAdd;
 document.getElementById("opt-ok").onclick=runOpt;
 document.getElementById("todo-ok").onclick=saveTodo;
 document.getElementById("todo-cancel").onclick=()=>document.getElementById("todowrap").classList.remove("on");
