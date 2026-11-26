@@ -1371,6 +1371,25 @@ function dayBlocks(){
   return [...map.values()];
 }
 function tourLen(seq,start){let d=0,cur=start;seq.forEach(b=>{const c=[b.pt.la,b.pt.lo];if(c[0]==null)return;d+=hav(cur,c);cur=c});return d}
+function autoReorder(){
+  const arr=pts(state.active);
+  const done=arr.filter(p=>p.done).slice().sort((a,b)=>String(a.end||a.start||"").localeCompare(String(b.end||b.start||"")));
+  const rest=arr.filter(p=>!p.done&&p.la!=null&&p.lo!=null);
+  const noC=arr.filter(p=>!p.done&&(p.la==null||p.lo==null));
+  const pers=arr.filter(p=>p.done&&/Личн/i.test(p.proj||""));
+  if(rest.length<2){ return }               // переставлять нечего
+  const lastP=done.length?done[done.length-1]:null;
+  let cur=lastP?[lastP.la,lastP.lo]:[HOME.la,HOME.lo];
+  const left=rest.slice(), seq=[];
+  while(left.length){
+    left.sort((a,b)=>hav(cur,[a.la,a.lo])-hav(cur,[b.la,b.lo]));
+    const b=left.shift(); seq.push(b); cur=[b.la,b.lo];
+  }
+  const out=done.concat(seq,noC);
+  if(out.length!==arr.length)return;
+  state.days[state.active]=out;
+  state.keepTt=null; save();
+}
 function optimizeDay(from){
   const blocks=dayBlocks().filter(b=>b.pt.la!=null&&b.pt.lo!=null);
   const noCoord=dayBlocks().filter(b=>b.pt.la==null||b.pt.lo==null);
@@ -2015,6 +2034,16 @@ function drawMap(){
     L.marker([st0.la,st0.lo],{icon:L.divIcon({html:sh,className:"",iconSize:[30,30],iconAnchor:[15,15]}),zIndexOffset:1000})
       .addTo(mapObj).bindPopup("<b>Старт</b><br>"+(st0.label||""));
   }
+  // конец маршрута — возврат домой
+  if(ps.length){
+    const last=ps[ps.length-1];
+    if(state.backHome!==false&&last.la!=null){
+      L.polyline([[last.la,last.lo],[HOME.la,HOME.lo]],{color:"#000",weight:3,opacity:.75,dashArray:"7 7"}).addTo(mapObj);
+    }
+    const hh=`<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="11" fill="#2e7d32" stroke="#ffffff" stroke-width="3"/><path d="M9 14.5 L15 9.5 L21 14.5 L21 21 L9 21 Z" fill="#ffffff"/></svg>`;
+    L.marker([HOME.la,HOME.lo],{icon:L.divIcon({html:hh,className:"",iconSize:[30,30],iconAnchor:[15,15]}),zIndexOffset:900})
+      .addTo(mapObj).bindPopup("<b>Дом</b><br>"+(HOME.addr||""));
+  }
   ps.forEach((p,i)=>{
     const st=netStyle(p.net,p.proj), inv=p.inv, ap=p.approx;
     const lg = netLogo(p.net,p.proj,18);
@@ -2234,7 +2263,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v253"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v254"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2317,7 +2346,11 @@ function _renderRoute(){
       if(ended&&secs<60&&!confirm("После Gillette прошло "+secs+" с. По правилу Oral не раньше минуты. Всё равно начать?"))return;
     }
     const p=pts(state.active)[+b.dataset.pstart];p.start=new Date().toISOString();p.end=null;p.done=false;save();renderRoute()});
-  wrap.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>{const p=pts(state.active)[+b.dataset.pend];p.end=new Date().toISOString();p.done=true;save();renderRoute()});
+  wrap.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>{
+    const arr=pts(state.active), p=arr[+b.dataset.pend];
+    p.end=new Date().toISOString(); p.done=true; save();
+    autoReorder(); renderRoute();
+  });
   wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.start));g.forEach(p=>{p.start=new Date().toISOString();p.end=null});save();renderRoute()});
   wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.end));const now=new Date().toISOString();g.forEach(p=>{p.end=now;p.done=true});save();renderRoute()});
   wrap.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.restart));g.forEach(p=>{p.start=new Date().toISOString();p.end=null;p.done=false});save();renderRoute()});
