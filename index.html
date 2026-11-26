@@ -1056,6 +1056,7 @@ function mergePreset(s,date){
   });
 }
 function save(){localStorage.setItem("moi-day2",JSON.stringify(state))}
+const SENT_LOG={"2026-11-16": {"107069": 1, "107062": 1, "107061": 1, "177201": 1}, "2026-11-17": {"133420": 1, "106977": 2}, "2026-11-18": {"107070": 1, "107064": 1, "107072": 1, "106974": 2}, "2026-11-19": {"107071": 1, "163719": 2, "107060": 1, "107057": 1, "107065": 1, "166733": 1, "163836": 1, "177198": 1, "106975": 2, "107052": 1}, "2026-11-20": {"107056": 1, "107058": 1, "107073": 1, "106976": 2, "106977": 2}, "2026-11-21": {"123457954": 1, "107051": 1}, "2026-11-22": {"163700": 1}, "2026-11-24": {"107054": 1, "133519": 1, "163822": 1}, "2026-11-25": {"107070": 1, "106974": 2, "107072": 1, "107064": 1}, "2026-11-26": {"107057": 1, "106975": 2, "107071": 1}};
 function sentLog(){try{return JSON.parse(localStorage.getItem("moi-sent")||"[]")}catch(e){return []}}
 function sentFor(date){return sentLog().filter(x=>x.date===date).length}
 function pts(date){return state.days[date]||[]}
@@ -2148,7 +2149,16 @@ function _renderRoute(){
     const monName=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"][+state.active.slice(5,7)-1];
     let sentRep=0;
     const needRep=timNeed;
-    sentLog().filter(x=>x.date===state.active).forEach(x=>{sentRep += (x.tims&&x.tims.length)?x.tims.length:1});
+    tts.forEach(t=>{
+      const rows2=all.filter(p=>String(p.tt)===t), w=rows2.filter(p=>p.kind!=="none");
+      if(!w.length)return;
+      const need=w.some(p=>p.kind==="km")?2:1;
+      const code=String(t).replace(/\D/g,"");
+      const logN=(SENT_LOG[state.active]||{})[code]||0;
+      const locN=sentLog().filter(x=>x.date===state.active&&String(x.tt||"").replace(/\D/g,"")===code).length;
+      const flag=w.some(p=>p.sent)?need:0;
+      sentRep += Math.min(need, Math.max(logN, locN, flag));
+    });
     const worked=dayWorked(all);
     document.getElementById("h-sub").innerHTML=
       (()=>{const work=all.filter(p=>!/^p\d/i.test(String(p.tt))&&!/Личн/i.test(p.proj||""));
@@ -2162,9 +2172,10 @@ function _renderRoute(){
       (state.reorderNext&&(Date.now()-(state.reorderTs||0))<300000?`<br><span style="color:#8fc0ff">маршрут перестроен · следующая: ${state.reorderNext}</span>`:"")+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
       (navigator.onLine?"":" · офлайн")+
-      (isPastDay()?(state.unlock?' · <span id="lock-lnk" class="lockbtn on">правки открыты · закрыть</span>':' · <span id="lock-lnk" class="lockbtn">✎ править день</span>'):"");
+      ((isPastDay()||(all.length&&all.every(p=>p.done)&&all.some(p=>p.kind!=="none")))?(state.unlock?' · <span id="lock-lnk" class="lockbtn on">правки открыты · закрыть</span>':' · <span id="lock-lnk" class="lockbtn">✎ править день</span>'):"");
   }
   try{ pts(state.active).forEach(p=>{ if(/Магнит (КМ|ДК)/i.test(String(p.net||""))) p.tim=timFor(p.net,p.lvl); }); }catch(e){}
+  try{ const m=SENT_LOG[state.active]||{}; pts(state.active).forEach(p=>{ if(m[String(p.tt).replace(/\D/g,"")]) p.sent=true; }); }catch(e){}
   const wrap=document.getElementById("s-route");
   if(all.length && !groupRows(all).length){
     wrap.innerHTML='<div class="card"><div class="hint">Под фильтр не попала ни одна точка.</div><div class="chkline"><button class="small" id="btn-unf">Сбросить фильтры</button></div></div>';
@@ -2316,7 +2327,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v261"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v262"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2452,7 +2463,7 @@ function renderCal(){
   const ll=document.getElementById("cal-lockline");
   if(ll){
     const d=state.active, past=d<todayISO;
-    ll.innerHTML=!past?"":(state.unlock?'<span id="cal-lock" style="color:#f0a0a8">'+d.split("-").reverse().slice(0,2).join(".")+' — правки открыты · закрыть</span>':'<span id="cal-lock" style="color:#8fc0ff">'+d.split("-").reverse().slice(0,2).join(".")+' — день закрыт · править</span>');
+    ll.innerHTML=!past?"":(state.unlock?'<span id="cal-lock" style="color:#f0a0a8">'+d.split("-").reverse().slice(0,2).join(".")+' — правки открыты · закрыть</span>':'<span id="cal-lock" style="color:#8fc0ff">'+d.split("-").reverse().slice(0,2).join(".")+' — ✎ править день</span>');
     const cl=document.getElementById("cal-lock");
     if(cl)cl.onclick=()=>{if(state.unlock){state.unlock=false;renderCal();renderRoute();return}
       if(confirm("Открыть день для правок?")){state.unlock=true;renderCal();renderRoute();}};
