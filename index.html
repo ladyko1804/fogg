@@ -1516,17 +1516,36 @@ async function geocode(q){
 }
 let addPicked=[];
 function baseFind(q){
-  const s=String(q||"").trim().toLowerCase();
+  const s=String(q||"").trim().toLowerCase().replace(/ё/g,"е");
   if(!s)return [];
+  const words=s.split(/[^0-9a-zа-я]+/i).filter(w=>w.length>=2);
   const digits=s.replace(/\D/g,"");
   const norm=t=>String(t||"").toLowerCase().replace(/ё/g,"е");
-  return BASE.filter(b=>{
-    const code=String(b.i).replace(/\D/g,"");
-    if(digits.length>=2&&code.includes(digits))return true;
-    if(norm(b.a).includes(norm(s)))return true;
-    if(norm(b.n).includes(norm(s)))return true;
-    return false;
-  }).slice(0,12);
+  const scored=[];
+  BASE.forEach(b=>{
+    const hay=norm(b.n+" "+b.a+" "+b.i);
+    let ok=true, score=0;
+    if(words.length){
+      words.forEach(w=>{ if(!hay.includes(w)) ok=false; });
+      if(ok) score=words.length*2;
+    }
+    if(!ok){
+      const code=String(b.i).replace(/\D/g,"");
+      if(digits.length>=2&&code.includes(digits)){ ok=true; score=1; }
+    }
+    if(ok){
+      const house=(b.a.match(/\d+/g)||[]);
+      if(digits.length&&house.some(h=>h===digits||h.startsWith(digits))) score+=3;
+      if(/магнит/i.test(s)&&!/км|косметик/i.test(s)){
+        if(/Магнит ДК/i.test(b.n)) score+=2;
+        if(/Магнит КМ/i.test(b.n)) score-=1;
+      }
+      if(digits.length>=2) score-=0.5;
+      scored.push([score,b]);
+    }
+  });
+  scored.sort((a,b)=>b[0]-a[0]);
+  return scored.slice(0,12).map(x=>x[1]);
 }
 function renderSugg(q){
   const box=document.getElementById("add-sugg"); if(!box)return;
@@ -1582,16 +1601,19 @@ function quickAdd(){
   const raw=document.getElementById("add-codes").value||"";
   let codes=[...new Set((raw.match(/\d{3,}/g)||[]))];
   if(addPicked.length)codes=[...new Set(addPicked.map(x=>String(x).replace(/\D/g,"")))];
+  if(!codes.length&&(raw||"").trim()){ // ввели не код, а адрес/сеть — берём первый вариант
+    const f=baseFind(raw); if(f.length)codes=[f[0].i.replace(/\D/g,"")];
+  }
   if(!codes.length){st.innerHTML='<span class="warn">Не вижу кодов — выбери точку из списка или введи код</span>';return}
   const list=pts(state.active).slice();
   const have=new Set(list.map(x=>String(x.tt)));
   let added=0, skipped=0;
   codes.forEach(code=>{
     if(have.has(code)){skipped++;return}
-    const b=BASE.find(x=>x.i.replace(/\D/g,"")===code);
+    const b=BASE.find(x=>x.i.replace(/\D/g,"")===code)||BASE.find(x=>x.i.replace(/\D/g,"").endsWith(code));
     if(!b){skipped++;return}
     const net=b.n, lvl=b.l;
-    const proj=/КМ|Пятёрочка/i.test(net)?"Gillette":"Gillette OSA";
+    const proj=/КМ|Пятёрочка|Дикси/i.test(net)?"Gillette":"Gillette OSA";
     list.push({net, lvl, addr:b.a, tt:code, proj, hours:b.h, tim:timFor(net,lvl), t:null,
                la:b.la, lo:b.lo, kind:kindOf(net), done:false, ...(b.c?{note:b.c}:{})});
     have.add(code); added++;
@@ -2163,7 +2185,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v242"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v244"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
