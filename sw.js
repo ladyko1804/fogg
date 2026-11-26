@@ -1,4 +1,4 @@
-const CACHE="moi-day-v250";
+const CACHE="moi-day-v251";
 const ASSETS=["./index.html","./manifest.json","./icon.svg","./icon-192.png","./icon-512.png"];
 const LOCAL_MAP=["./leaflet/leaflet.js","./leaflet/leaflet.css","https://tile.openstreetmap.org/0/0/0.png"];
 const CDN=[
@@ -42,7 +42,7 @@ self.addEventListener("fetch",e=>{
   if(isDoc){
     // 3 секунды на сеть: если связи нет или она еле дышит — сразу отдаём сохранённую копию
     e.respondWith((async()=>{
-      const net=await timeoutFetch(req,8000);
+      const net=await timeoutFetch(req,3500);
       if(net){
         const cp=net.clone();
         caches.open(CACHE).then(c=>c.put(req,cp)).catch(()=>{});
