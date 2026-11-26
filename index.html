@@ -2191,11 +2191,7 @@ function _renderRoute(){
     return}
   wrap.innerHTML="";
 
-  {const lk=wrap.querySelector("#lock-lnk");
-   if(lk)lk.onclick=()=>{
-     if(state.unlock){state.unlock=false;renderRoute();return}
-     if(confirm("Открыть прошедший день для правок?\nМожно случайно испортить уже отправленный отчёт.")){state.unlock=true;renderRoute()}
-   };}
+
   const flt=state.filter=state.filter||{};
   {
     const bar=document.createElement("div");bar.className="filters";
@@ -2327,7 +2323,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v263"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v266"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2485,7 +2481,7 @@ function renderCal(){
   const ll=document.getElementById("cal-lockline");
   if(ll){
     const d=state.active, past=d<todayISO;
-    ll.innerHTML=!past?"":(state.unlock?'<span id="cal-lock" style="color:#f0a0a8">'+d.split("-").reverse().slice(0,2).join(".")+' — правки открыты · закрыть</span>':'<span id="cal-lock" style="color:#8fc0ff">'+d.split("-").reverse().slice(0,2).join(".")+' — ✎ править день</span>');
+    ll.innerHTML=!past?"":(state.unlock?'<span style="color:#f0a0a8">правки открыты · закрыть</span>':'<span style="color:#8b9aab">день закрыт — править можно в маршруте, кнопка ✎ в шапке</span>');
     const cl=document.getElementById("cal-lock");
     if(cl)cl.onclick=()=>{if(state.unlock){state.unlock=false;renderCal();renderRoute();return}
       if(confirm("Открыть день для правок?")){state.unlock=true;renderCal();renderRoute();}};
@@ -2664,6 +2660,17 @@ function openYandexRoute(){
   const url="https://yandex.ru/maps/?rtext="+seq.map(p=>`${p.la},${p.lo}`).join("~")+"&rtt=auto";
   window.open(url,"_blank");
 }
+document.addEventListener("click",e=>{
+  const t=e.target;
+  if(!t||t.id!=="lock-lnk")return;
+  e.preventDefault();
+  if(state.unlock){ state.unlock=false; try{renderRoute()}catch(_){}; try{renderCal&&renderCal()}catch(_){}; return; }
+  if(confirm("Открыть день для правок?\nМожно случайно испортить уже отправленный отчёт.")){
+    state.unlock=true; save();
+    try{renderRoute()}catch(_){}
+    try{if(typeof renderCal==="function")renderCal()}catch(_){}
+  }
+});
 function checkNewVersion(){
   const cur=parseInt(String(APP_VER||"0").replace(/\D/g,""),10)||0;
   fetch("index.html?_="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{
