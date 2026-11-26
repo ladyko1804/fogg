@@ -1391,6 +1391,7 @@ function optimizeDay(from){
   }
   const all=pts(state.active), out=[];
   seq.concat(noCoord).forEach(b=>b.rows.forEach(i=>out.push(all[i])));
+  state.start={la:from[0],lo:from[1],label:(optFrom==="home"?"дом":(optFrom==="now"?"где я":"старт"))};
   state.days[state.active]=out;
   state.keepTt=null; save(); renderRoute();
   const km=best.toFixed(1);
@@ -1755,7 +1756,8 @@ function fillMapFilters(){
   const tb=document.getElementById("map-f-tim");
   if(tb){tb.className="chip2"+(f.tim?" sel":"");tb.onclick=()=>{state.filter=state.filter||{};state.filter.tim=!state.filter.tim;save();drawMap()}}
   const me=document.getElementById("map-f-me");
-  me.onclick=()=>{ if(!state.me){drawMe();return} mapObj.setView([state.me.la,state.me.lo],17); };
+  me.onclick=()=>{ if(!state.me){drawMe();return} mapObj.setView([state.me.la,state.me.lo],17);
+    state.start={la:state.me.la,lo:state.me.lo,label:"где я"}; save(); drawMap(); };
   document.getElementById("map-f-reset").onclick=()=>{state.filter={};save();drawMap();renderRoute()};
 }
 function monthVisitDates(mon){
@@ -2005,8 +2007,14 @@ function drawMap(){
         ps[idx].la=ps[idx].la+Math.sin(a)*R; ps[idx].lo=ps[idx].lo+Math.cos(a)*R;});
     });
   }
-  const ll=ps.map(p=>[p.la,p.lo]);
-  L.polyline(ll,{color:"#000",weight:3.5,opacity:.9}).addTo(mapObj);
+  const st0=(state.start&&state.start.la!=null)?state.start:null;
+  const ll=(st0?[[st0.la,st0.lo]]:[]).concat(ps.map(p=>[p.la,p.lo]));
+  if(ll.length>1) L.polyline(ll,{color:"#000",weight:3.5,opacity:.9}).addTo(mapObj);
+  if(st0){
+    const sh=`<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="11" fill="#1e6fd9" stroke="#ffffff" stroke-width="3"/><circle cx="15" cy="15" r="4" fill="#ffffff"/></svg>`;
+    L.marker([st0.la,st0.lo],{icon:L.divIcon({html:sh,className:"",iconSize:[30,30],iconAnchor:[15,15]}),zIndexOffset:1000})
+      .addTo(mapObj).bindPopup("<b>Старт</b><br>"+(st0.label||""));
+  }
   ps.forEach((p,i)=>{
     const st=netStyle(p.net,p.proj), inv=p.inv, ap=p.approx;
     const lg = netLogo(p.net,p.proj,18);
@@ -2223,7 +2231,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v247"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v249"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
