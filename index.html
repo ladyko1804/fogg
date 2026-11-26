@@ -2079,8 +2079,10 @@ function _renderRoute(){
     document.getElementById("h-sub").innerHTML=
       (()=>{const work=all.filter(p=>!/^p\d/i.test(String(p.tt))&&!/Личн/i.test(p.proj||""));
         const wt=[...new Set(work.map(p=>String(p.tt)))];
+        const doneW=work.filter(p=>p.done).length;
+        const doneT=new Set(work.filter(p=>p.done).map(p=>String(p.tt))).size;
         const pers=all.length-work.length;
-        return `визитов: <b>${work.length}</b> · точек: <b>${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
+        return `визитов: план <b>${work.length}</b> · сделано <b>${doneW}</b><br>точек: план <b>${wt.length}</b> · сделано <b>${doneT}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
       `IR: <b>${irDone}/${irTotal}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b><br>`+
       `отчётов: <b>${sentRep}/${needRep}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
@@ -2231,7 +2233,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v249"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v250"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
