@@ -33,6 +33,7 @@ button.primary{background:var(--accent);color:#fff;font-weight:600}
 button.ok{background:var(--ok);color:#04140a;font-weight:600}
 button.small{padding:7px 11px;font-size:14px}
 button.wide{width:100%;margin-top:10px}
+.donevisit{display:inline-block;margin:8px 0 2px;padding:9px 14px;border-radius:11px;background:#1f4d2b;border:1px solid #2e7d32;color:#d6f5d6;font-weight:700;font-size:13px}
 .vrow{display:flex;gap:8px;margin-top:10px}
 .vrow button{flex:1}
 label{display:block;font-size:13px;color:var(--dim);margin:12px 0 4px}
@@ -2045,10 +2046,7 @@ function _renderRoute(){
           if(ci.left<=60) return `<div class="closing bad">до закрытия магазина осталось ${ci.left} мин</div>`;
           return "";})()}
 
-        <div class="vrow">
-          <button class="primary" data-vstart="${idx0(idxs)}" ${(running||isDone||isPast)?"disabled style=opacity:.4":""}>Начать визит</button>
-          <button class="primary" data-vend="${idx0(idxs)}" ${(!running||isPast)?"disabled style=opacity:.4":""}>Закончить визит</button>
-        </div>
+        ${isDone?`<div class="donevisit">Визит выполнен</div>`:""}
 
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
@@ -2079,7 +2077,7 @@ function _renderRoute(){
               const grpDone=grpProj.length>0&&grpProj.every(r=>r.done);
               const btn=!x.start?(grpDone?`<button class="chk past" disabled>${nm}</button>`:`<button class="primary small" ${isPast?"disabled style=opacity:.4":""} data-pstart="${isPast?"":idxs[ix]}">${nm} — начать</button>`)
                 :(!x.end?`<button class="primary small" ${isPast?"disabled style=opacity:.4":""} data-pend="${isPast?"":idxs[ix]}">${nm} — закончила</button>`
-                :`<span class="pname fin">${nm}</span>`);
+                :`<span class="pname fin">${nm} — визит выполнен</span>`);
               const cc=`<button class="small cmtbtn ${x.comment?"has":""}" data-cmt="${idxs[ix]}" title="Комментарий по проекту">${x.comment?"💬✓":"💬"}</button>`;
               const rem=x.comment?`<div class="cmttext">${esc(x.comment)}</div>`:"";
               return `<div class="projline">${btn}<span class="right">${cc}<span class="pt2 ${over?"bad":""}">${tstr}</span></span></div>`+rem;
@@ -2118,7 +2116,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v237"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v238"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
