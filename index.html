@@ -258,6 +258,12 @@ tr.tot td{color:#cfe3ff}
 .reorderbar{background:#1d3350;border:1px solid #3f7fd0;color:#cfe3ff;border-radius:10px;padding:9px 12px;margin:8px 0;font-size:12.5px}
 .card.flash{animation:flashCard 1.8s ease}
 @keyframes flashCard{0%{box-shadow:0 0 0 2px #3f7fd0}100%{box-shadow:none}}
+
+.donehead{background:#4a5460 !important;border:1px solid #6b7885 !important;border-radius:12px;padding:12px 14px;margin:18px 0 10px;color:#ffffff !important;font-weight:800;font-size:13.5px;letter-spacing:.3px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.08) inset}
+.donehead:before{content:"✓";margin-right:8px;font-weight:900;color:#c8f7c8}
+#donebox{background:#20272f !important;border:1px dashed #5a6673 !important;border-radius:12px;padding:9px}
+.divider{display:flex;align-items:center;gap:10px;margin:18px 0 6px;color:#8b9aab;font-size:12px}
+.divider:before,.divider:after{content:"";flex:1;height:1px;background:#3a4552}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -2124,6 +2130,7 @@ function _renderRoute(){
         return `визитов: <b>${doneW}/${work.length}</b> · точек: <b>${doneT}/${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
       `IR: <b>${irDone}/${irTotal}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timGot}/${timNeed}</b><br>`+
       `отчётов: <b>${sentRep}/${needRep}</b>`+
+      (state.reorderNext&&(Date.now()-(state.reorderTs||0))<300000?`<br><span style="color:#8fc0ff">маршрут перестроен · следующая: ${state.reorderNext}</span>`:"")+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
       (navigator.onLine?"":" · офлайн")+
       (isPastDay()?(state.unlock?' · <span id="lock-lnk" style="color:#f0a0a8">правки открыты · закрыть</span>':' · <span id="lock-lnk" style="color:#8fc0ff">день закрыт · править</span>'):"");
@@ -2258,6 +2265,8 @@ function _renderRoute(){
     wrap.appendChild(bar);
   }
   if(doneEls.length){
+    const dv=document.createElement("div");dv.className="divider";dv.textContent="сделано";
+    wrap.appendChild(dv);
     const h=document.createElement("div");h.className="donehead";
     h.innerHTML=`<span>Завершено · ${doneEls.length}</span><span class="caret">${state.doneOpen?"▾":"▸"}</span>`;
     h.onclick=()=>{state.doneOpen=!state.doneOpen;save();renderRoute()};
@@ -2275,9 +2284,9 @@ function _renderRoute(){
   // итоги дня одним текстом — чтобы переслать ассистенту
   {
     const box=document.createElement("div");box.className="card";
-    box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
+    box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v255"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v257"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2286,6 +2295,7 @@ function _renderRoute(){
     box.querySelector("#btn-add").onclick=openAdd;
     const bst=box.querySelector("#btn-stats"); if(bst)bst.onclick=openStats;
     const bhs=box.querySelector("#btn-hist"); if(bhs)bhs.onclick=openHistory;
+    const brf=box.querySelector("#btn-refresh"); if(brf)brf.onclick=hardRefresh;
     box.querySelector("#btn-backup").onclick=openBackup;
     box.querySelector("#btn-copy").onclick=()=>{
       const t=dayText();
@@ -2347,7 +2357,7 @@ function _renderRoute(){
     const g=gRows(rowsOf(b.dataset.vend));
     const now=new Date().toISOString(); let closed=0;
     g.forEach(p=>{ if(p.start&&!p.end){p.end=now;p.done=true;closed++;} });
-    if(closed){save();renderRoute();}
+    if(closed){save();autoReorder();renderRoute();}
   });
   wrap.querySelectorAll("[data-pstart]").forEach(b=>b.onclick=()=>{
     const pp=pts(state.active)[+b.dataset.pstart];
@@ -2366,7 +2376,7 @@ function _renderRoute(){
     autoReorder(); renderRoute();
   });
   wrap.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.start));g.forEach(p=>{p.start=new Date().toISOString();p.end=null});save();renderRoute()});
-  wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.end));const now=new Date().toISOString();g.forEach(p=>{p.end=now;p.done=true});save();renderRoute()});
+  wrap.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.end));const now=new Date().toISOString();g.forEach(p=>{p.end=now;p.done=true});save();autoReorder();renderRoute()});
   wrap.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.restart));g.forEach(p=>{p.start=new Date().toISOString();p.end=null;p.done=false});save();renderRoute()});
   wrap.querySelectorAll("[data-undone]").forEach(b=>b.onclick=()=>{const g=gRows(rowsOf(b.dataset.undone));g.forEach(p=>{p.done=false;p.end=null});save();renderRoute()});
   wrap.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{state.repIdx=+b.dataset.rep;save();go("report")});
@@ -2573,6 +2583,13 @@ document.getElementById("t-add").onclick=()=>{
 };
 
 renderRoute();renderTasks();renderCal();fillReport();
+async function hardRefresh(){
+  try{
+    const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k)));
+    if(navigator.serviceWorker){ const r=await navigator.serviceWorker.getRegistration(); if(r) await r.unregister(); }
+  }catch(e){}
+  location.replace(location.pathname+"?r="+Date.now());
+}
 function checkNewVersion(){
   const cur=parseInt(String(APP_VER||"0").replace(/\D/g,""),10)||0;
   fetch("index.html?_="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{
