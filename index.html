@@ -913,7 +913,6 @@ function prevComment(tt,date){
   return null;
 }
 function enrichDay(date){
-  state.unlock=false;
   const list=state.days[date]; if(!list)return;
   list.forEach(p=>{
     const b=baseOf(p.tt); if(!b)return;
@@ -2014,7 +2013,7 @@ function _renderRoute(){
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
             const sh=rows.find(x=>x.shelves&&x.shelves>0);
             return `<button class="chk ${dn?"on":(mk?"no":(rows.every(x=>x.done)?"past":""))}" ${started?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" : ✓"+(sh?" "+sh.shelves:""):(mk?timLabel+" : ✗ "+((rows.find(x=>x.timReason)||{}).timReason||"нет"):timLabel)}</button>`;})():""}
-          ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" ${started?"":"disabled"} data-ir="${idx0(idxs)}">IR</button>`:""}
+          ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" ${started?"":"disabled"} data-ir="${idx0(idxs)}">${(()=>{const w=rows.filter(x=>x.ir);const done=w.every(x=>x.irDone),warn=w.some(x=>x.irWarn);return done?(warn?"IR : ✓ ⚠️":"IR : ✓"):"IR"})()}</button>`:""}
           ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces);return `<button class="chk ${pns?"on":(rows.every(x=>x.done)?"past":"")}" ${started?"":"disabled"} data-pn="${idx0(idxs)}">ПН${pf?" ✓: "+pf.pnFaces:""}</button>`;})():""}
           ${oral!==null?`<button class="chk ${oral?"on":(rows.every(x=>x.done)?"past":"")}" ${started?"":"disabled"} data-oral="${idx0(idxs)}">${oral?"Oral : ✓":"Oral"}</button>`:""}
         </div>
@@ -2121,7 +2120,14 @@ function _renderRoute(){
   wrap.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{if(!canEdit()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.inv))[0].tt;openInv(b.dataset.inv)});
   wrap.querySelectorAll("[data-shelf]").forEach(b=>{b.onclick=()=>{state.keepTt=gRows(rowsOf(b.dataset.shelf.split("|")[0]))[0].tt;const [i,n]=b.dataset.shelf.split("|");const g=rowsOf(i);const v=+n;gRows(g)[0].shelves=(+gRows(g)[0].shelves===v?null:v);save();renderRoute()}});
   wrap.querySelectorAll("[data-tim]").forEach(b=>b.onclick=()=>{if(!canEdit()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.tim))[0].tt;openTim(b.dataset.tim)});
-  wrap.querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>{if(!canEdit()){(window.toastMsg?toastMsg("День закрыт"):0);return;}state.keepTt=gRows(rowsOf(b.dataset.ir))[0].tt;const g=rowsOf(b.dataset.ir);const w=gRows(g).filter(x=>x.ir);const v=!w.every(x=>x.irDone);w.forEach(x=>x.irDone=v);save();renderRoute()});
+  wrap.querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>{if(!canEdit()){(window.toastMsg?toastMsg("День закрыт"):0);return}
+    state.keepTt=gRows(rowsOf(b.dataset.ir))[0].tt;
+    const g=rowsOf(b.dataset.ir), w=gRows(g).filter(x=>x.ir);
+    const allDone=w.every(x=>x.irDone), anyWarn=w.some(x=>x.irWarn);
+    if(!allDone){ w.forEach(x=>{x.irDone=true;x.irWarn=false}) }
+    else if(!anyWarn){ w.forEach(x=>{x.irDone=true;x.irWarn=true}) }
+    else { w.forEach(x=>{x.irDone=false;x.irWarn=false}) }
+    save();renderRoute()});
   wrap.querySelectorAll("[data-pn]").forEach(b=>b.onclick=()=>{if(!canEdit()){(window.toastMsg?toastMsg("День закрыт"):0);return;}
     state.keepTt=gRows(rowsOf(b.dataset.pn))[0].tt;
     const g=rowsOf(b.dataset.pn), w=gRows(g).filter(p=>p.kind==="km");
@@ -2227,7 +2233,7 @@ function renderCal(){
     const el=document.createElement("div");
     el.className="day"+(ds===todayISO?" today":"")+(ds===state.active?" sel":"");
     el.innerHTML=`<div class="d">${d}</div><div class="m">${list.length?`<span class="r">${done}/${list.length}</span>`:""}${sent?`<br><span class="s">✓${sent}</span>`:""}</div>`;
-    el.onclick=()=>{state.active=ds;save();renderRoute();go("route")};
+    el.onclick=()=>{state.active=ds;state.unlock=false;save();renderRoute();go("route")};
     grid.appendChild(el);
   }
 }
