@@ -2174,7 +2174,7 @@ function _renderRoute(){
       (navigator.onLine?"":" · офлайн")+
       ((isPastDay()||(all.length&&all.every(p=>p.done)&&all.some(p=>p.kind!=="none")))?(state.unlock?' · <span id="lock-lnk" class="lockbtn on">правки открыты · закрыть</span>':' · <span id="lock-lnk" class="lockbtn">✎ править день</span>'):"");
   }
-  try{ pts(state.active).forEach(p=>{ if(/Магнит (КМ|ДК)/i.test(String(p.net||""))) p.tim=timFor(p.net,p.lvl); }); }catch(e){}
+  try{ enrichFromBase(state.active); pts(state.active).forEach(p=>{ if(/Магнит (КМ|ДК)/i.test(String(p.net||""))) p.tim=timFor(p.net,p.lvl); }); }catch(e){}
   try{ const m=SENT_LOG[state.active]||{}; pts(state.active).forEach(p=>{ if(m[String(p.tt).replace(/\D/g,"")]) p.sent=true; }); }catch(e){}
   const wrap=document.getElementById("s-route");
   if(all.length && !groupRows(all).length){
@@ -2327,7 +2327,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v262"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v263"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2424,6 +2424,28 @@ function _renderRoute(){
   wrap.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{state.repIdx=+b.dataset.rep;save();go("report")});
   wrap.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>moveGroup(rowsOf(b.dataset.up).idxs,-1));
   wrap.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>moveGroup(rowsOf(b.dataset.down).idxs,1));
+}
+function enrichFromBase(date){
+  (state.days[date]||[]).forEach(p=>{
+    if(/^\d+$/.test(String(p.tt))&&baseOf(p.tt)){ /* код валиден */ }
+    let b=baseOf(p.tt);
+    if(!b&&p.addr){
+      const k=addrKey(p.addr);
+      const c=BASE.filter(x=>addrKey(x.a)===k);
+      const byNet=p.net?c.filter(x=>x.n===p.net):c;
+      b=(byNet.length===1?byNet[0]:(c.length===1?c[0]:null));
+    }
+    if(!b)return;
+    if(!/^\d+$/.test(String(p.tt))||!baseOf(p.tt)) p.tt=String(b.i).replace(/\D/g,"");
+    if(!p.hours||p.hours==="—")p.hours=b.h;
+    if(!p.lvl||p.lvl==="—")p.lvl=b.l;
+    if(!p.per&&b.pe)p.per=b.pe;
+    if(!p.prio&&b.p)p.prio=b.p;
+    if((p.la==null||p.lo==null)&&b.la){p.la=b.la;p.lo=b.lo;}
+    if(!p.note&&b.c)p.note=b.c;
+    if(!p.tim||p.tim==="—")p.tim=timFor(b.n,b.l);
+    p.kind=kindOf(b.n);
+  });
 }
 function renderRoute(){
   try{ _renderRoute() }
