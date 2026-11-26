@@ -2057,8 +2057,14 @@ function _renderRoute(){
     const tts=[...new Set(all.map(p=>String(p.tt)))];
     const invT=tts.filter(t=>all.some(p=>String(p.tt)===t&&p.inv));
     const invDone=invT.filter(t=>all.filter(p=>String(p.tt)===t&&p.inv).every(p=>p.invClosed)).length;
-    const timT=tts.filter(t=>all.some(p=>String(p.tt)===t&&p.kind!=="none"));
-    const timDone=timT.filter(t=>all.filter(p=>String(p.tt)===t&&p.kind!=="none").every(p=>p.timDone)).length;
+    let timNeed=0, timGot=0;
+    tts.forEach(t=>{
+      const rows=all.filter(p=>String(p.tt)===t);
+      const w=rows.filter(p=>p.kind!=="none");
+      if(!w.length)return;
+      if(w.some(p=>p.kind==="km")){ timNeed+=2; if(w.some(p=>p.timDone))timGot++; if(w.some(p=>p.pnDone))timGot++; }
+      else { timNeed+=1; if(w.every(p=>p.timDone))timGot++; }
+    });
     const irTotal=all.filter(p=>p.ir).length, irDone=all.filter(p=>p.ir&&p.irDone).length;
     const mon=state.active.slice(0,7), seenInv={};
     let invMonthDone=0;
@@ -2067,13 +2073,8 @@ function _renderRoute(){
     });
     const invMonthPlan=BASE.reduce((a,b)=>a+(b.ip||0),0);
     const monName=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"][+state.active.slice(5,7)-1];
-    let needRep=0, sentRep=0;
-    tts.forEach(t=>{
-      const rows=all.filter(p=>String(p.tt)===t);
-      if(!rows.some(p=>p.kind!=="none"))return;
-      const isKM=rows.some(p=>p.kind==="km");
-      needRep += isKM?2:1;
-    });
+    let sentRep=0;
+    const needRep=timNeed;
     sentLog().filter(x=>x.date===state.active).forEach(x=>{sentRep += (x.tims&&x.tims.length)?x.tims.length:1});
     const worked=dayWorked(all);
     document.getElementById("h-sub").innerHTML=
@@ -2082,8 +2083,8 @@ function _renderRoute(){
         const doneW=work.filter(p=>p.done).length;
         const doneT=new Set(work.filter(p=>p.done).map(p=>String(p.tt))).size;
         const pers=all.length-work.length;
-        return `визитов: план <b>${work.length}</b> · сделано <b>${doneW}</b><br>точек: план <b>${wt.length}</b> · сделано <b>${doneT}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
-      `IR: <b>${irDone}/${irTotal}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timDone}/${timT.length}</b><br>`+
+        return `визитов: <b>${doneW}/${work.length}</b> · точек: <b>${doneT}/${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
+      `IR: <b>${irDone}/${irTotal}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timGot}/${timNeed}</b><br>`+
       `отчётов: <b>${sentRep}/${needRep}</b>`+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
       (navigator.onLine?"":" · офлайн")+
@@ -2233,7 +2234,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v252"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v253"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
