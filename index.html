@@ -1819,12 +1819,13 @@ function openHistory(){
 function openIr(tt){
   const w=pts(state.active).filter(x=>String(x.tt)===String(tt)&&x.ir);
   if(!w.length)return;
-  const cur=w.every(x=>x.irDone)?(w.some(x=>x.irWarn)?"warn":"done"):"no";
+  const cur=w.some(x=>x.irSkip)?"skip":(w.every(x=>x.irDone)?(w.some(x=>x.irWarn)?"warn":"done"):"no");
   const wrap=document.createElement("div"); wrap.className="statwrap on";
   wrap.innerHTML='<div class="irbox"><div class="irhead">IR в этом магазине</div>'+
     '<button class="irbtn'+(cur==="done"?" sel":"")+'" data-v="done">Сделано</button>'+
     '<button class="irbtn'+(cur==="warn"?" sel":"")+'" data-v="warn">Сделано, но были проблемы с отправкой отчёта</button>'+
     '<button class="irbtn'+(cur==="no"?" sel":"")+'" data-v="no">Не сделано</button>'+
+    '<button class="irbtn'+(cur==="skip"?" sel":"")+'" data-v="skip">Не надо делать</button>'+
     '<button class="irbtn ghost" data-v="cancel">Отмена</button></div>';
   wrap.style.alignItems="center"; wrap.style.justifyContent="center";
   document.body.appendChild(wrap);
@@ -1832,9 +1833,10 @@ function openIr(tt){
   wrap.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{
     const v=b.dataset.v;
     if(v==="cancel"){wrap.remove();return}
-    if(v==="done")w.forEach(x=>{x.irDone=true;x.irWarn=false});
-    if(v==="warn")w.forEach(x=>{x.irDone=true;x.irWarn=true});
-    if(v==="no")w.forEach(x=>{x.irDone=false;x.irWarn=false});
+    if(v==="done")w.forEach(x=>{x.irDone=true;x.irWarn=false;x.irSkip=false});
+    if(v==="warn")w.forEach(x=>{x.irDone=true;x.irWarn=true;x.irSkip=false});
+    if(v==="no")w.forEach(x=>{x.irDone=false;x.irWarn=false;x.irSkip=false});
+    if(v==="skip")w.forEach(x=>{x.irDone=false;x.irWarn=false;x.irSkip=true});
     save(); wrap.remove(); renderRoute();
   });
 }
@@ -2042,7 +2044,7 @@ function _renderRoute(){
           ${tim!==null?(()=>{const mk=rows.some(x=>x.timMarked),dn=rows.filter(x=>x.kind!=="none").every(x=>x.timDone&&x.timMarked);
             const sh=rows.find(x=>x.shelves&&x.shelves>0);
             return `<button class="chk ${dn?"on":(mk?"no":(rows.every(x=>x.done)?"past":""))}" ${(started||canEdit())?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" : ✓"+(sh?" "+sh.shelves:""):(mk?timLabel+" : ✗ "+((rows.find(x=>x.timReason)||{}).timReason||"нет"):timLabel)}</button>`;})():""}
-          ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).every(x=>x.irDone)?"on":""}" ${(started||canEdit())?"":"disabled"} data-ir="${idx0(idxs)}" data-tt="${rows[0].tt}">${(()=>{const w=rows.filter(x=>x.ir);const done=w.every(x=>x.irDone),warn=w.some(x=>x.irWarn);return done?(warn?"IR : ✓ ⚠️":"IR : ✓"):"IR"})()}</button>`:""}
+          ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).some(x=>x.irSkip)?"past":(rows.filter(x=>x.ir).every(x=>x.irDone)?"on":"")}" ${(started||canEdit())?"":"disabled"} data-ir="${idx0(idxs)}" data-tt="${rows[0].tt}">${(()=>{const w=rows.filter(x=>x.ir);const done=w.every(x=>x.irDone),warn=w.some(x=>x.irWarn);return w.some(x=>x.irSkip)?"IR — не надо":(done?(warn?"IR : ✓ ⚠️":"IR : ✓"):"IR")})()}</button>`:""}
           ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces);return `<button class="chk ${pns?"on":(rows.every(x=>x.done)?"past":"")}" ${(started||canEdit())?"":"disabled"} data-pn="${idx0(idxs)}">ПН${pf?" ✓: "+pf.pnFaces:""}</button>`;})():""}
           ${oral!==null?`<button class="chk ${oral?"on":(rows.every(x=>x.done)?"past":"")}" ${(started||canEdit())?"":"disabled"} data-oral="${idx0(idxs)}">${oral?"Oral : ✓":"Oral"}</button>`:""}
         </div>
@@ -2104,7 +2106,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика за месяц</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v233"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v234"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
