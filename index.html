@@ -252,6 +252,12 @@ tr.tot td{color:#cfe3ff}
 .markrow span{font-size:13px;color:#c7d3e0}
 .chipbtn{background:#1b2836;border:1px solid #33465c;color:#cfe3ff;border-radius:999px;padding:7px 14px;font-size:12.5px;cursor:pointer}
 .chipbtn.on{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6}
+
+.donehead{background:#2a323c;border:1px solid #3a4552;border-radius:11px;padding:11px 13px;margin:14px 0 8px;color:#c3cedb;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+#donebox{background:#222a33;border:1px dashed #3a4552;border-radius:11px;padding:8px}
+.reorderbar{background:#1d3350;border:1px solid #3f7fd0;color:#cfe3ff;border-radius:10px;padding:9px 12px;margin:8px 0;font-size:12.5px}
+.card.flash{animation:flashCard 1.8s ease}
+@keyframes flashCard{0%{box-shadow:0 0 0 2px #3f7fd0}100%{box-shadow:none}}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -1388,7 +1394,10 @@ function autoReorder(){
   const out=done.concat(seq,noC);
   if(out.length!==arr.length)return;
   state.days[state.active]=out;
+  state.reorderTs=Date.now();
+  state.reorderNext=seq.length?(seq[0].net+" "+seq[0].addr):"";
   state.keepTt=null; save();
+  setTimeout(()=>{ document.querySelectorAll("#s-route .card").forEach(c=>{c.classList.add("flash");setTimeout(()=>c.classList.remove("flash"),1900)}) },120);
 }
 function optimizeDay(from){
   const blocks=dayBlocks().filter(b=>b.pt.la!=null&&b.pt.lo!=null);
@@ -2243,6 +2252,11 @@ function _renderRoute(){
     if(isDone){el.classList.add("dim");doneEls.push(el);}
     else wrap.appendChild(el);
   });
+  if(state.reorderNext&&(Date.now()-(state.reorderTs||0))<120000){
+    const bar=document.createElement("div");bar.className="reorderbar";
+    bar.innerHTML="маршрут перестроен · следующая: <b>"+state.reorderNext+"</b>";
+    wrap.appendChild(bar);
+  }
   if(doneEls.length){
     const h=document.createElement("div");h.className="donehead";
     h.innerHTML=`<span>Завершено · ${doneEls.length}</span><span class="caret">${state.doneOpen?"▾":"▸"}</span>`;
@@ -2263,7 +2277,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v254"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v255"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
