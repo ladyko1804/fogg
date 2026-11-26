@@ -913,7 +913,7 @@ const BASE=[{"i": "glz_106969", "n": "Подружка", "a": "Гражданс�
 function presetFor(date){return PRESETS[date]||null}
 function timFor(net,lvl){
   const n=String(net||"");
-  if(/КМ/i.test(n)){ return /Платина|Золото|Серебро/i.test(String(lvl||""))?"КМ1":"КМ2"; }
+  if(/КМ/i.test(n)) return "КМ1";
   if(/ДК/i.test(n)) return "КСО";
   return "—";
 }
@@ -2286,7 +2286,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v257"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v258"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
