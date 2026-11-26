@@ -1182,12 +1182,20 @@ function openTim(i){
   const ch=document.getElementById("tim-choice");ch.innerHTML="";
   const isKM=p.kind==="km";
   document.getElementById("tim-checks").style.display=isKM?"block":"none";
-  document.getElementById("tim-choice").style.display=isKM?"none":"block";
+  document.getElementById("tim-choice").style.display="block";
   if(isKM){
     const items=TIM_ITEMS[p.tim]||TIM_ITEMS["КМ1"];
     const host=document.getElementById("tim-check-list");host.innerHTML="";
     timChecks={};
-    document.getElementById("tim-hooks").value="";
+    {const th=document.getElementById("tim-hooks"); if(th)th.value="";}
+    const ch2=document.getElementById("tim-choice"); ch2.innerHTML="";
+    [["done","Выполнено"],["no","Не выполнено"]].forEach(([v,t])=>{
+      const c=document.createElement("div");c.className="chip";c.textContent=t;
+      c.onclick=()=>{timChoice=v;[...ch2.children].forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
+        const why=document.getElementById("tim-why");
+        if(v==="no"){why.style.display="block";} else {why.style.display="none";}};
+      ch2.appendChild(c);
+    });
     items.forEach(it=>{
       const c=document.createElement("div");c.className="chip";c.textContent=it.t;
       c.onclick=()=>{timChecks[it.k]=!timChecks[it.k];c.classList.toggle("sel",!!timChecks[it.k])};
@@ -1217,10 +1225,18 @@ function saveTim(){
   if(p.kind==="km"){
     const items=TIM_ITEMS[p.tim]||TIM_ITEMS["КМ1"];
     const doneCount=items.filter(it=>timChecks[it.k]).length;
-    if(doneCount===0){alert("Отметь, что сделано по ТИМ");return}
-    const hooks=parseInt(String(document.getElementById("tim-hooks").value||"").replace(/\D/g,""),10);
+    if(timChoice==="no"&&doneCount===0){
+      // отметили "Не выполнено" — причину спросим ниже общей логикой
+      pts(state.active).forEach(x=>{ if(String(x.tt)===String(p.tt)&&x.kind!=="none"){
+        x.timMarked=true;x.timDone=false;x.timCheck={...timChecks};x.timReason=timReason||"не выполнено";
+      }});
+      save();document.getElementById("timwrap").classList.remove("on");renderRoute();return;
+    }
+    if(doneCount===0&&timChoice!=="done"){alert("Выбери: выполнено или нет");return}
+    const thEl=document.getElementById("tim-hooks");
+    const hooks=parseInt(String(thEl?thEl.value||"":"").replace(/\D/g,""),10);
     const needHooks=items.some(it=>it.k==="hooks");
-    const all=doneCount===items.length&&(!needHooks||hooks>0);
+    const all=(timChoice==="done")?true:(doneCount===items.length&&(!needHooks||hooks>0));
     pts(state.active).forEach(x=>{ if(String(x.tt)===String(p.tt)&&x.kind!=="none"){
       x.timMarked=true;x.timDone=all;x.timCheck={...timChecks};x.timHooks=(isFinite(hooks)?hooks:null);
       x.timReason=all?null:("выполнено "+doneCount+" из "+items.length);
@@ -2323,7 +2339,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v266"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v268"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
