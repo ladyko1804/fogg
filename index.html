@@ -2233,7 +2233,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v250"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v251"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2525,6 +2525,22 @@ document.getElementById("t-add").onclick=()=>{
 };
 
 renderRoute();renderTasks();renderCal();fillReport();
+function checkNewVersion(){
+  const cur=parseInt(String(APP_VER||"0").replace(/\D/g,""),10)||0;
+  fetch("index.html?_="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{
+    const m=t.match(/версия v(\d+)/);
+    if(!m)return;
+    const srv=parseInt(m[1],10);
+    if(srv>cur){
+      const key="reloaded_"+srv;
+      if(sessionStorage.getItem(key))return;
+      sessionStorage.setItem(key,"1");
+      location.replace(location.pathname+"?v="+srv);
+    }
+  }).catch(()=>{});
+}
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden)setTimeout(checkNewVersion,800) });
+setTimeout(checkNewVersion,1500);
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
 
 document.getElementById("btn-map").onclick=openMap;
