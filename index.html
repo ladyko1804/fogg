@@ -1359,7 +1359,7 @@ function saveCmt(){
 }
 
 
-const HOME={la:60.05418,lo:30.42965};
+const HOME={la:60.054170,lo:30.429500,addr:"Мурино, бульвар Менделеева, 16"};
 function hav(a,b){
   const R=6371,dLa=(b[0]-a[0])*Math.PI/180,dLo=(b[1]-a[1])*Math.PI/180;
   const x=Math.sin(dLa/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLo/2)**2;
@@ -1391,7 +1391,7 @@ function optimizeDay(from){
   }
   const all=pts(state.active), out=[];
   seq.concat(noCoord).forEach(b=>b.rows.forEach(i=>out.push(all[i])));
-  state.start={la:from[0],lo:from[1],label:(optFrom==="home"?"дом":(optFrom==="now"?"где я":"старт"))};
+  state.start={la:from[0],lo:from[1],label:(optFrom==="home"?"дом · "+(HOME.addr||""):(optFrom==="now"?"где я":"старт"))};
   state.days[state.active]=out;
   state.keepTt=null; save(); renderRoute();
   const km=best.toFixed(1);
@@ -2233,7 +2233,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v251"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v252"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
