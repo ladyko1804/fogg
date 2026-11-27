@@ -267,6 +267,8 @@ tr.tot td{color:#cfe3ff}
 
 .lockbtn{display:inline-block;margin-left:6px;padding:6px 12px;border-radius:9px;background:#1d3350;border:1px solid #3f7fd0;color:#cfe3ff;font-weight:700;cursor:pointer}
 .lockbtn.on{background:#4a2a2f;border-color:#a04a54;color:#ffd0d6}
+
+.donebtn{background:#1f4d2b !important;border:1px solid #2e7d32 !important;color:#d6f5d6 !important;font-weight:700;opacity:1 !important}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -2188,10 +2190,9 @@ function _renderRoute(){
     document.getElementById("h-sub").innerHTML=
       (()=>{const work=all.filter(p=>!/^p\d/i.test(String(p.tt))&&!/Личн/i.test(p.proj||""));
         const wt=[...new Set(work.map(p=>String(p.tt)))];
-        const doneW=work.filter(p=>p.done).length;
-        const doneT=new Set(work.filter(p=>p.done).map(p=>String(p.tt))).size;
+        const closed=wt.filter(t=>work.filter(p=>String(p.tt)===t).every(p=>p.done)).length;
         const pers=all.length-work.length;
-        return `визитов: <b>${doneW}/${work.length}</b> · точек: <b>${doneT}/${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
+        return `визитов: <b>${closed}/${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
       `IR: <b>${irDone}/${irTotal}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timGot}/${timNeed}</b><br>`+
       `отчётов: <b>${sentRep}/${needRep}</b>`+
       (state.reorderNext&&(Date.now()-(state.reorderTs||0))<300000?`<br><span style="color:#8fc0ff">маршрут перестроен · следующая: ${state.reorderNext}</span>`:"")+
@@ -2276,8 +2277,6 @@ function _renderRoute(){
           if(ci.left<=60) return `<div class="closing bad">до закрытия магазина осталось ${ci.left} мин</div>`;
           return "";})()}
 
-        ${isDone?`<div class="donevisit">Визит выполнен</div>`:""}
-
         <div class="chkline">
           ${inv!==null?(()=>{const cl=rows.some(x=>x.invClosed),dn=rows.filter(x=>x.inv).every(x=>x.invDone&&x.invClosed);
             return `<button class="chk ${dn?"on":(cl?"no":(rows.every(x=>x.done)?"past":""))}" data-inv="${idx0(idxs)}">${dn?"Инвент : ✓":(cl?"Инвент : ✗ "+((rows.find(x=>x.invReason)||{}).invReason||"нет"):"Инвент")}</button>`;})():""}
@@ -2305,9 +2304,11 @@ function _renderRoute(){
               const blocked=othersRunning;
               const grpProj=rows.filter(r=>projShort(r.proj)===nm);
               const grpDone=grpProj.length>0&&grpProj.every(r=>r.done);
-              const btn=!x.start?(grpDone?`<button class="chk past" disabled>${nm}</button>`:`<button class="primary small" ${isPast?"disabled style=opacity:.4":""} data-pstart="${isPast?"":idxs[ix]}">${nm} — начать</button>`)
-                :(!x.end?`<button class="primary small" ${isPast?"disabled style=opacity:.4":""} data-pend="${isPast?"":idxs[ix]}">${nm} — закончила</button>`
-                :`<span class="pname fin">${nm} — визит выполнен</span>`);
+              const btn=grpDone
+                ? `<button class="donebtn small" disabled>${nm} — выполнен ✓</button>`
+                : (!x.start
+                  ? `<button class="primary small" ${isPast?"disabled style=opacity:.4":""} data-pstart="${isPast?"":idxs[ix]}">${nm} — начать</button>`
+                  : `<button class="primary small" ${isPast?"disabled style=opacity:.4":""} data-pend="${isPast?"":idxs[ix]}">${nm} — закончить</button>`);
               const cc=`<button class="small cmtbtn ${x.comment?"has":""}" data-cmt="${idxs[ix]}" title="Комментарий по проекту">${x.comment?"💬✓":"💬"}</button>`;
               const rem=x.comment?`<div class="cmttext">${esc(x.comment)}</div>`:"";
               return `<div class="projline">${btn}<span class="right">${cc}<span class="pt2 ${over?"bad":""}">${tstr}</span></span></div>`+rem;
@@ -2353,7 +2354,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v270"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v271"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
