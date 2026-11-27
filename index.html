@@ -955,6 +955,14 @@ function prevComment(tt,date){
 }
 function enrichDay(date){
   const list=state.days[date]; if(!list)return;
+  try{ enrichFromBase(date); }catch(e){}
+  try{ const em=(typeof EMBED_MARKS!=="undefined"?EMBED_MARKS[date]:null)||{};
+    list.forEach(p=>{ const r=em[String(p.tt).replace(/\D/g,"")]; if(!r)return; Object.keys(r).forEach(k=>{ p[k]=r[k]; }); });
+  }catch(e){}
+  try{ const sm=(typeof SENT_LOG!=="undefined"?SENT_LOG[date]:null)||{};
+    list.forEach(p=>{ if(sm[String(p.tt).replace(/\D/g,"")])p.sent=true; });
+  }catch(e){}
+  try{ pts(date).forEach(p=>{ if(/Магнит (КМ|ДК)/i.test(String(p.net||""))) p.tim=timFor(p.net,p.lvl); }); }catch(e){}
   list.forEach(p=>{
     const b=baseOf(p.tt); if(!b)return;
     if(!p.lvl||p.lvl==="—")p.lvl=b.l;
@@ -1056,6 +1064,7 @@ function mergePreset(s,date){
   });
 }
 function save(){localStorage.setItem("moi-day2",JSON.stringify(state))}
+const EMBED_MARKS={"2026-11-27":{"107056":{"inv":true}}};
 const SENT_LOG={"2026-11-16": {"107069": 1, "107062": 1, "107061": 1, "177201": 1}, "2026-11-17": {"133420": 1, "106977": 2}, "2026-11-18": {"107070": 1, "107064": 1, "107072": 1, "106974": 2}, "2026-11-19": {"107071": 1, "163719": 2, "107060": 1, "107057": 1, "107065": 1, "166733": 1, "163836": 1, "177198": 1, "106975": 2, "107052": 1}, "2026-11-20": {"107056": 1, "107058": 1, "107073": 1, "106976": 2, "106977": 2}, "2026-11-21": {"123457954": 1, "107051": 1}, "2026-11-22": {"163700": 1}, "2026-11-24": {"107054": 1, "133519": 1, "163822": 1}, "2026-11-25": {"107070": 1, "106974": 2, "107072": 1, "107064": 1}, "2026-11-26": {"107057": 1, "106975": 2, "107071": 1}};
 function sentLog(){try{return JSON.parse(localStorage.getItem("moi-sent")||"[]")}catch(e){return []}}
 function sentFor(date){return sentLog().filter(x=>x.date===date).length}
@@ -2192,6 +2201,11 @@ function _renderRoute(){
   }
   try{ enrichFromBase(state.active); pts(state.active).forEach(p=>{ if(/Магнит (КМ|ДК)/i.test(String(p.net||""))) p.tim=timFor(p.net,p.lvl); }); }catch(e){}
   try{ const m=SENT_LOG[state.active]||{}; pts(state.active).forEach(p=>{ if(m[String(p.tt).replace(/\D/g,"")]) p.sent=true; }); }catch(e){}
+  try{ const em=EMBED_MARKS[state.active]||{};
+    (state.days[state.active]||[]).forEach(p=>{ const r=em[String(p.tt).replace(/\D/g,"")]; if(!r)return;
+      Object.keys(r).forEach(k=>{ if(p[k]!==r[k]){p[k]=r[k];} });
+    });
+  }catch(e){}
   const wrap=document.getElementById("s-route");
   if(all.length && !groupRows(all).length){
     wrap.innerHTML='<div class="card"><div class="hint">Под фильтр не попала ни одна точка.</div><div class="chkline"><button class="small" id="btn-unf">Сбросить фильтры</button></div></div>';
@@ -2339,7 +2353,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v268"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v270"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
