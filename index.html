@@ -2191,9 +2191,10 @@ function _renderRoute(){
     document.getElementById("h-sub").innerHTML=
       (()=>{const work=all.filter(p=>!/^p\d/i.test(String(p.tt))&&!/Личн/i.test(p.proj||""));
         const wt=[...new Set(work.map(p=>String(p.tt)))];
-        const closed=wt.filter(t=>work.filter(p=>String(p.tt)===t).every(p=>p.done)).length;
+        const doneRows=work.filter(p=>p.done).length;
+        const closedStores=wt.filter(t=>work.filter(p=>String(p.tt)===t).every(p=>p.done)).length;
         const pers=all.length-work.length;
-        return `визитов: <b>${closed}/${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
+        return `визитов: <b>${doneRows}/${work.length}</b> · магазинов: <b>${closedStores}/${wt.length}</b>`+(pers?` · личных: <b>${pers}</b>`:"")+"<br>";})()+
       `IR: <b>${irDone}/${irTotal}</b> · инвент: <b>${invDone}/${invT.length}</b> · ТИМ: <b>${timGot}/${timNeed}</b><br>`+
       `отчётов: <b>${sentRep}/${needRep}</b>`+
       (state.reorderNext&&(Date.now()-(state.reorderTs||0))<300000?`<br><span style="color:#8fc0ff">маршрут перестроен · следующая: ${state.reorderNext}</span>`:"")+
@@ -2355,7 +2356,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v272"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v273"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
