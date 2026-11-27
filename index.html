@@ -533,6 +533,7 @@ function humanDate(s){
 /* ---------- данные ---------- */
 /* маршрут, собранный ассистентом: дата → точки по порядку с плановым временем */
 const PRESETS={
+  "2026-11-27": [{"net": "Магнит ДК", "lvl": "Золото", "addr": "Светлановский пр., 48к4", "tt": "107056", "proj": "Gillette OSA", "hours": "08:00 – 23:00", "tim": "КСО", "t": 25, "la": 60.024709, "lo": 30.383082, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Запрет директора. Ехать попозже. Сканер — напротив сыра.", "inv": true}, {"net": "Магнит КМ", "lvl": "Серебро", "addr": "пр. Науки, 10к1", "tt": "106976", "proj": "Gillette", "hours": "10:00 – 22:00", "tim": "КМ1", "t": 39, "la": 60.015009, "lo": 30.391014, "kind": "km", "done": false, "per": "2р/мес", "prio": "🏆"}, {"net": "Магнит КМ", "lvl": "Серебро", "addr": "пр. Науки, 10к1", "tt": "106976", "proj": "Oral Care", "hours": "10:00 – 22:00", "tim": "КМ1", "t": 17, "la": 60.015009, "lo": 30.391014, "kind": "km", "done": false, "per": "2р/мес", "prio": "🏆"}, {"net": "Магнит ДК", "lvl": "Золото", "addr": "пр. Науки, 10к1", "tt": "107073", "proj": "Gillette OSA", "hours": "круглосуточно", "tim": "КСО", "t": 30, "la": 60.015009, "lo": 30.391014, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Протереть боксы! Нужны ценникодержатели."}, {"net": "Магнит ДК", "lvl": "Золото", "addr": "пр. Науки, 15к1", "tt": "107058", "proj": "Gillette OSA", "hours": "06:00 – 00:00", "tim": "КСО", "t": 25, "la": 60.01632, "lo": 30.379565, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Отломан ценникодержатель (нет в опроснике)."}],
  "2026-11-24":[
   {net:"Перекресток",lvl:"Серебро",addr:"пр. Культуры, 1",tt:"107044",proj:"Gillette OSA",hours:"08:00 – 23:00",t:75,la:60.0337194,lo:30.3676403,done:true,sent:true,ir:true,irDone:true,invDone:true},
   {net:"Перекресток",lvl:"Серебро",addr:"пр. Культуры, 1",tt:"107044",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:27,la:60.0337194,lo:30.3676403,done:true,oralDone:true},
@@ -923,7 +924,7 @@ function timFor(net,lvl){
   return "—";
 }
 function baseOf(tt){const k=String(tt).replace(/\D/g,'');return BASE.find(b=>b.i.replace(/\D/g,'')===k)||null}
-const PRESET_VER="2511-done2";
+const PRESET_VER="2711-1";
 const DAY_RESET="19-11-r1";
 
 const SEED=[
@@ -2354,7 +2355,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v271"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v272"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
