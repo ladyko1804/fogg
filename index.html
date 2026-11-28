@@ -2138,7 +2138,7 @@ function drawMap(){
       `<b>${netBadge(p.net,p.proj)}${i+1}. ${p.net}</b><br>${p.addr}<br>${p.hours||""}${p.per?`<br><span style="color:#7d8fa3">${p.per}</span>`:""}`+
       `${p.inv?"<br><b style='color:#e67e22'>Нужна инвентаризация</b>":""}`+
       `${p.approx?"<br><span style='color:#9fb0c4'>координата примерная</span>":""}`+
-      `<br><a href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank">Яндекс Карты</a>`+
+      `<div style="margin-top:10px"><a class="popbtn ymap" href="https://yandex.ru/maps/?rtext=~${p.la},${p.lo}&rtt=auto" target="_blank" rel="noopener">Маршрут в Яндекс Картах</a></div>`+
       `<div style="margin-top:8px"><button class="popbtn primary" data-goto="${p.tt}" style="width:100%">Открыть карточку</button></div>`);
   });
   try{mapObj.fitBounds(ll,{padding:[30,30]})}catch(e){}
@@ -2358,7 +2358,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v276"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v277"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
