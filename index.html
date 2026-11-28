@@ -2465,9 +2465,9 @@ function _renderRoute(){
   {
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="rebtn time" id="btn-reorder-time">Пересобрать по времени работы</button><button class="rebtn prio" id="btn-reorder-prio">Пересобрать по важности</button></div>`+
-      `<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
+      `<div class="chkline"><button class="small" id="btn-yroute">Яндекс: следующие 10</button><button class="small" id="btn-yroute2">Следующие 10 →</button><button class="small" id="btn-ynavi">Навигатор до следующей</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v283"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v284"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2477,7 +2477,12 @@ function _renderRoute(){
     const bst=box.querySelector("#btn-stats"); if(bst)bst.onclick=openStats;
     const bhs=box.querySelector("#btn-hist"); if(bhs)bhs.onclick=openHistory;
     const brf=box.querySelector("#btn-refresh"); if(brf)brf.onclick=hardRefresh;
-    const byr=box.querySelector("#btn-yroute"); if(byr)byr.onclick=openYandexRoute;
+    const byr=box.querySelector("#btn-yroute"); if(byr)byr.onclick=()=>openYandexRoute(0);
+    const byr2=box.querySelector("#btn-yroute2"); if(byr2)byr2.onclick=()=>openYandexRoute(10);
+    const byn=box.querySelector("#btn-ynavi"); if(byn)byn.onclick=openYandexNavi;
+    const restN=pts(state.active).filter(p=>!p.done&&p.la!=null).length;
+    if(byr2)byr2.style.display=restN>10?"inline-block":"none";
+    if(byr)byr.textContent="Яндекс: "+(restN>10?"первые 10":"маршрут")+" ("+Math.min(restN,10)+")";
     const rt=box.querySelector("#btn-reorder-time"); if(rt)rt.onclick=()=>{reorderDay("time")};
     const rp=box.querySelector("#btn-reorder-prio"); if(rp)rp.onclick=()=>{reorderDay("prio")};
     box.querySelector("#btn-backup").onclick=openBackup;
@@ -2796,27 +2801,34 @@ async function hardRefresh(){
   }catch(e){}
   location.replace(location.pathname+"?r="+Date.now());
 }
-function openYandexRoute(){
+function yandexRouteUrl(offset){
   const all=pts(state.active);
-  const work=all.filter(p=>p.la!=null&&p.lo!=null);
-  const st=(state.start&&state.start.la!=null)?state.start:HOME;
-  const done=work.filter(p=>p.done);
-  const rest=work.filter(p=>!p.done);
-  const seq=[st].concat(done.length?rest:work);
-  const url="https://yandex.ru/maps/?rtext="+seq.map(p=>`${p.la},${p.lo}`).join("~")+"&rtt=auto";
+  const done=all.filter(p=>p.done&&p.la!=null);
+  const rest=all.filter(p=>!p.done&&p.la!=null);
+  const start=(done.length?done[done.length-1]:null)||{la:HOME.la,lo:HOME.lo};
+  const chunk=rest.slice(offset||0,(offset||0)+10);
+  if(!chunk.length)return null;
+  const seq=[start].concat(chunk);
+  return "https://yandex.ru/maps/?rtext="+seq.map(p=>`${p.la},${p.lo}`).join("~")+"&rtt=auto";
+}
+function openYandexRoute(offset){
+  const url=yandexRouteUrl(offset||0);
+  if(!url){ if(window.toastMsg)toastMsg("Непройденных точек с координатами нет"); return }
   window.open(url,"_blank");
 }
-document.addEventListener("click",e=>{
-  const t=e.target;
-  if(!t||t.id!=="lock-lnk")return;
-  e.preventDefault();
-  if(state.unlock){ state.unlock=false; try{renderRoute()}catch(_){}; try{renderCal&&renderCal()}catch(_){}; return; }
-  if(confirm("Открыть день для правок?\nМожно случайно испортить уже отправленный отчёт.")){
-    state.unlock=true; save();
-    try{renderRoute()}catch(_){}
-    try{if(typeof renderCal==="function")renderCal()}catch(_){}
-  }
-});
+function yandexNavUrl(){
+  const all=pts(state.active);
+  const rest=all.filter(p=>!p.done&&p.la!=null);
+  if(!rest.length)return null;
+  const p=rest[0];
+  return `yandexnavi://build_route_on_map?lat_to=${p.la}&lon_to=${p.lo}`;
+}
+function openYandexNavi(){
+  const u=yandexNavUrl();
+  if(!u){ if(window.toastMsg)toastMsg("Нет следующей точки"); return }
+  window.location.href=u;
+  setTimeout(()=>{ try{ window.open("https://yandex.ru/maps/?rtext=~"+u.split("lat_to=")[1]," _blank") }catch(e){} },1200);
+}
 function checkNewVersion(){
   const cur=parseInt(String(APP_VER||"0").replace(/\D/g,""),10)||0;
   fetch("index.html?_="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{
