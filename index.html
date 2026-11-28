@@ -274,6 +274,7 @@ tr.tot td{color:#cfe3ff}
 .rebtn.time{background:#8a4b12;border-color:#c77718;color:#ffe6c7}
 .rebtn.prio{background:#5a2f7a;border-color:#8e4fc0;color:#f0dcff}
 .chkline .rebtn+.rebtn{margin-left:8px}
+.rebtn.near{background:#15532f;border-color:#2c8a4f;color:#d8ffe6}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -1484,7 +1485,14 @@ async function reorderDay(kind){
   const seen=new Map(); const groups=[];
   rest.forEach(p=>{ const k=String(p.tt); if(!seen.has(k)){seen.set(k,[]);groups.push(seen.get(k));} seen.get(k).push(p); });
   const last=done.length?done[done.length-1]:null;
-  const start=(last&&last.la!=null)?[last.la,last.lo]:[HOME.la,HOME.lo];
+  let start=(last&&last.la!=null)?[last.la,last.lo]:[HOME.la,HOME.lo];
+  if(kind==="near"){
+    const me=await new Promise(res=>{
+      if(!navigator.geolocation){res(null);return}
+      navigator.geolocation.getCurrentPosition(p=>res([p.coords.latitude,p.coords.longitude]),()=>res(null),{enableHighAccuracy:true,timeout:9000,maximumAge:30000});
+    });
+    if(me){ start=me; state.me={la:me[0],lo:me[1]}; save(); }
+  }
 
   // координаты: 0 — старт, далее группы
   const coords=[start];
@@ -1505,6 +1513,8 @@ async function reorderDay(kind){
       if(kind==="time"){
         const d=hoursCloseMin(A.g[0].hours)-hoursCloseMin(B.g[0].hours);
         if(Math.abs(d)>0.5)return d;
+      }else if(kind==="near"){
+        /* только расстояние */
       }else{
         const d=storeRank(A.g)-storeRank(B.g);
         if(d!==0)return d;
@@ -1520,7 +1530,7 @@ async function reorderDay(kind){
   state.reorderTs=Date.now();
   state.reorderNext=out[0]&&out[0][0]?(out[0][0].net+" "+out[0][0].addr):"";
   save(); renderRoute();
-  if(window.toastMsg)toastMsg((kind==="time"?"Пересобрал по времени работы":"Пересобрал по важности")+(m?" · по дорогам":" · по прямой"));
+  if(window.toastMsg)toastMsg((kind==="time"?"Пересобрал по времени работы":(kind==="near"?"Пересобрал от тебя по удалённости":"Пересобрал по важности"))+(m?" · по дорогам":" · по прямой"));
 }
 function autoReorder(){
   const arr=pts(state.active);
@@ -2464,10 +2474,10 @@ function _renderRoute(){
   // итоги дня одним текстом — чтобы переслать ассистенту
   {
     const box=document.createElement("div");box.className="card";
-    box.innerHTML=`<div class="chkline"><button class="rebtn time" id="btn-reorder-time">Пересобрать по времени работы</button><button class="rebtn prio" id="btn-reorder-prio">Пересобрать по важности</button></div>`+
+    box.innerHTML=`<div class="chkline"><button class="rebtn time" id="btn-reorder-time">Пересобрать по времени работы</button><button class="rebtn prio" id="btn-reorder-prio">Пересобрать по важности</button><button class="rebtn near" id="btn-reorder-near">Пересобрать от меня</button></div>`+
       `<div class="chkline"><button class="small" id="btn-yroute">Яндекс: следующие 10</button><button class="small" id="btn-yroute2">Следующие 10 →</button><button class="small" id="btn-ynavi">Навигатор до следующей</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v284"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v285"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2485,6 +2495,7 @@ function _renderRoute(){
     if(byr)byr.textContent="Яндекс: "+(restN>10?"первые 10":"маршрут")+" ("+Math.min(restN,10)+")";
     const rt=box.querySelector("#btn-reorder-time"); if(rt)rt.onclick=()=>{reorderDay("time")};
     const rp=box.querySelector("#btn-reorder-prio"); if(rp)rp.onclick=()=>{reorderDay("prio")};
+    const rn=box.querySelector("#btn-reorder-near"); if(rn)rn.onclick=()=>{reorderDay("near")};
     box.querySelector("#btn-backup").onclick=openBackup;
     box.querySelector("#btn-copy").onclick=()=>{
       const t=dayText();
