@@ -308,6 +308,7 @@ document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwr
 document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
 document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
+<!-- версия v292 -->
 </head>
 <body>
 <script>
@@ -1040,7 +1041,7 @@ function refreshStoreInfo(){
   return ch;
 }
 let state=load();
-const APP_VER="289";
+const APP_VER="292";
 if(state.appVer!==APP_VER){state.filter={};state.appVer=APP_VER;refreshStoreInfo();try{localStorage.setItem("moi-day2",JSON.stringify(state))}catch(e){}}
 (function normalize(){
   if(!state||typeof state!=="object")state={};
