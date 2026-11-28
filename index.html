@@ -533,7 +533,7 @@ function humanDate(s){
 /* ---------- данные ---------- */
 /* маршрут, собранный ассистентом: дата → точки по порядку с плановым временем */
 const PRESETS={
-  "2026-11-27": [{"net": "Магнит ДК", "lvl": "Золото", "addr": "Светлановский пр., 48к4", "tt": "107056", "proj": "Gillette OSA", "hours": "08:00 – 23:00", "tim": "КСО", "t": 25, "la": 60.024709, "lo": 30.383082, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Запрет директора. Ехать попозже. Сканер — напротив сыра.", "inv": true}, {"net": "Магнит КМ", "lvl": "Серебро", "addr": "пр. Науки, 10к1", "tt": "106976", "proj": "Gillette", "hours": "10:00 – 22:00", "tim": "КМ1", "t": 39, "la": 60.015009, "lo": 30.391014, "kind": "km", "done": false, "per": "2р/мес", "prio": "🏆"}, {"net": "Магнит КМ", "lvl": "Серебро", "addr": "пр. Науки, 10к1", "tt": "106976", "proj": "Oral Care", "hours": "10:00 – 22:00", "tim": "КМ1", "t": 17, "la": 60.015009, "lo": 30.391014, "kind": "km", "done": false, "per": "2р/мес", "prio": "🏆"}, {"net": "Магнит ДК", "lvl": "Золото", "addr": "пр. Науки, 10к1", "tt": "107073", "proj": "Gillette OSA", "hours": "круглосуточно", "tim": "КСО", "t": 30, "la": 60.015009, "lo": 30.391014, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Протереть боксы! Нужны ценникодержатели."}, {"net": "Магнит ДК", "lvl": "Золото", "addr": "пр. Науки, 15к1", "tt": "107058", "proj": "Gillette OSA", "hours": "06:00 – 00:00", "tim": "КСО", "t": 25, "la": 60.01632, "lo": 30.379565, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Отломан ценникодержатель (нет в опроснике)."}],
+  "2026-11-27": [{"net": "Магнит ДК", "lvl": "Золото", "addr": "Светлановский пр., 48к4", "tt": "107056", "proj": "Gillette OSA", "hours": "08:00 – 23:00", "tim": "КСО", "t": 25, "la": 60.024709, "lo": 30.383082, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Запрет директора. Ехать попозже. Сканер — напротив сыра.", "inv": true}, {"net": "Магнит КМ", "lvl": "Серебро", "addr": "пр. Науки, 10к1", "tt": "106976", "proj": "Gillette", "hours": "10:00 – 22:00", "tim": "КМ1", "t": 39, "la": 60.015009, "lo": 30.391014, "kind": "km", "done": false, "per": "2р/мес", "prio": "🏆"}, {"net": "Магнит КМ", "lvl": "Серебро", "addr": "пр. Науки, 10к1", "tt": "106976", "proj": "Oral Care OSA", "hours": "10:00 – 22:00", "tim": "КМ1", "t": 17, "la": 60.015009, "lo": 30.391014, "kind": "km", "done": false, "per": "2р/мес", "prio": "🏆"}, {"net": "Магнит ДК", "lvl": "Золото", "addr": "пр. Науки, 10к1", "tt": "107073", "proj": "Gillette OSA", "hours": "круглосуточно", "tim": "КСО", "t": 30, "la": 60.015009, "lo": 30.391014, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Протереть боксы! Нужны ценникодержатели."}, {"net": "Магнит ДК", "lvl": "Золото", "addr": "пр. Науки, 15к1", "tt": "107058", "proj": "Gillette OSA", "hours": "06:00 – 00:00", "tim": "КСО", "t": 25, "la": 60.01632, "lo": 30.379565, "kind": "dk", "done": false, "per": "2р/мес", "prio": "🏆", "note": "Отломан ценникодержатель (нет в опроснике)."}],
  "2026-11-24":[
   {net:"Перекресток",lvl:"Серебро",addr:"пр. Культуры, 1",tt:"107044",proj:"Gillette OSA",hours:"08:00 – 23:00",t:75,la:60.0337194,lo:30.3676403,done:true,sent:true,ir:true,irDone:true,invDone:true},
   {net:"Перекресток",lvl:"Серебро",addr:"пр. Культуры, 1",tt:"107044",proj:"Oral Care OSA",hours:"08:00 – 23:00",t:27,la:60.0337194,lo:30.3676403,done:true,oralDone:true},
@@ -1067,7 +1067,7 @@ function mergePreset(s,date){
   });
 }
 function save(){localStorage.setItem("moi-day2",JSON.stringify(state))}
-const EMBED_MARKS={"2026-11-27":{"107056":{"inv":true}}};
+const EMBED_MARKS={"2026-11-27":{"106976":{"pnDone":false,"pnMarked":true,"pnFaces":10,"pnReason":"Запрет директора"}}};
 const SENT_LOG={"2026-11-16": {"107069": 1, "107062": 1, "107061": 1, "177201": 1}, "2026-11-17": {"133420": 1, "106977": 2}, "2026-11-18": {"107070": 1, "107064": 1, "107072": 1, "106974": 2}, "2026-11-19": {"107071": 1, "163719": 2, "107060": 1, "107057": 1, "107065": 1, "166733": 1, "163836": 1, "177198": 1, "106975": 2, "107052": 1}, "2026-11-20": {"107056": 1, "107058": 1, "107073": 1, "106976": 2, "106977": 2}, "2026-11-21": {"123457954": 1, "107051": 1}, "2026-11-22": {"163700": 1}, "2026-11-24": {"107054": 1, "133519": 1, "163822": 1}, "2026-11-25": {"107070": 1, "106974": 2, "107072": 1, "107064": 1}, "2026-11-26": {"107057": 1, "106975": 2, "107071": 1}, "2026-11-27": {"107056": 1, "107058": 1, "107073": 1, "106976": 2}};
 function sentLog(){try{return JSON.parse(localStorage.getItem("moi-sent")||"[]")}catch(e){return []}}
 function sentFor(date){return sentLog().filter(x=>x.date===date).length}
@@ -2286,8 +2286,10 @@ function _renderRoute(){
             const sh=rows.find(x=>x.shelves&&x.shelves>0);
             return `<button class="chk ${dn?"on":(mk?"no":(rows.every(x=>x.done)?"past":""))}" ${(started||canEdit())?"":"disabled"} data-tim="${idx0(idxs)}">${dn?timLabel+" : ✓"+(sh?" "+sh.shelves:""):(mk?timLabel+" : ✗ "+((rows.find(x=>x.timReason)||{}).timReason||"нет"):timLabel)}</button>`;})():""}
           ${rows.some(x=>x.ir)?`<button class="chk ${rows.filter(x=>x.ir).some(x=>x.irSkip)?"past":(rows.filter(x=>x.ir).every(x=>x.irDone)?"on":"")}" ${(started||canEdit())?"":"disabled"} data-ir="${idx0(idxs)}" data-tt="${rows[0].tt}">${(()=>{const w=rows.filter(x=>x.ir);const done=w.every(x=>x.irDone),warn=w.some(x=>x.irWarn);return w.some(x=>x.irSkip)?"IR — не надо":(done?(warn?"IR : ✓ ⚠️":"IR : ✓"):"IR")})()}</button>`:""}
-          ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces);return `<button class="chk ${pns?"on":(rows.every(x=>x.done)?"past":"")}" ${(started||canEdit())?"":"disabled"} data-pn="${idx0(idxs)}">ПН${pf?" ✓: "+pf.pnFaces:""}</button>`;})():""}
-          ${oral!==null?`<button class="chk ${oral?"on":(rows.every(x=>x.done)?"past":"")}" ${(started||canEdit())?"":"disabled"} data-oral="${idx0(idxs)}">${oral?"Oral : ✓":"Oral"}</button>`:""}
+          ${pns!==null?(()=>{const pf=rows.find(x=>x.pnFaces),pr=rows.find(x=>x.pnReason);const marked=rows.some(x=>x.pnMarked);
+            const label=pns?("ПН : ✓"+(pf?" "+pf.pnFaces+" фейсов":"")):(marked?("ПН : ✗ "+((pr&&pr.pnReason)||"нет")+(pf?" · "+pf.pnFaces+" фейсов":"")):"ПН");
+            return `<button class="chk ${pns?"on":(marked?"no":(rows.every(x=>x.done)?"past":""))}" ${(started||canEdit())?"":"disabled"} data-pn="${idx0(idxs)}">${label}</button>`;})():""}
+
         </div>
         <div class="chkline">
           ${rows.map((x,ix)=>{
@@ -2356,7 +2358,7 @@ function _renderRoute(){
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v274"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v276"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
