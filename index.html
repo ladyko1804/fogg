@@ -308,7 +308,7 @@ document.getElementById("rpt-cancel").onclick=()=>document.getElementById("rptwr
 document.getElementById("cmt-cancel").onclick=()=>document.getElementById("cmtwrap").classList.remove("on");
 document.getElementById("map-close").onclick=()=>document.getElementById("mapwrap").classList.remove("on");
 </script>
-<!-- версия v292 -->
+<!-- версия v293 -->
 </head>
 <body>
 <script>
@@ -450,7 +450,7 @@ document.getElementById("map-close").onclick=()=>document.getElementById("mapwra
 </div>
 
 <div id="mapwrap">
-  <div id="mapbar"><b>Точки на карте</b><button id="map-close">Закрыть</button></div>
+  <div id="mapbar"><button id="map-close">Закрыть</button></div>
   <div id="mapfilters">
   <select id="map-f-net"></select>
   <span class="chip2" id="map-f-inv">Инвент</span>
@@ -1041,7 +1041,7 @@ function refreshStoreInfo(){
   return ch;
 }
 let state=load();
-const APP_VER="292";
+const APP_VER="293";
 if(state.appVer!==APP_VER){state.filter={};state.appVer=APP_VER;refreshStoreInfo();try{localStorage.setItem("moi-day2",JSON.stringify(state))}catch(e){}}
 (function normalize(){
   if(!state||typeof state!=="object")state={};
@@ -2479,8 +2479,6 @@ function _renderRoute(){
     wrap.appendChild(bar);
   }
   if(doneEls.length){
-    const dv=document.createElement("div");dv.className="divider";dv.textContent="сделано";
-    wrap.appendChild(dv);
     const h=document.createElement("div");h.className="donehead";
     h.innerHTML=`<span>Завершено · ${doneEls.length}</span><span class="caret">${state.doneOpen?"▾":"▸"}</span>`;
     h.onclick=()=>{state.doneOpen=!state.doneOpen;save();renderRoute()};
