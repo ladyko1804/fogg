@@ -2088,19 +2088,29 @@ function monthHistory(mon){
   });
   return map;
 }
-function openHistory(){
-  const mon=(state.active||todayISO).slice(0,7);
+function histMonths(){
+  const set=new Set();
+  Object.keys(state.days||{}).forEach(d=>set.add(d.slice(0,7)));
+  Object.keys(PRESETS||{}).forEach(d=>set.add(d.slice(0,7)));
+  set.add((state.active||todayISO).slice(0,7));
+  return [...set].sort();
+}
+function openHistory(monArg){
+  const mon=monArg||(state.active||todayISO).slice(0,7);
   const data=monthHistory(mon);
   const rows=Object.entries(data).map(([tt,x])=>({tt,...x}))
     .sort((a,b)=>(b.visits.length-a.visits.length)||(b.inv.length-a.inv.length)||(b.ir.length-a.ir.length)||a.net.localeCompare(b.net));
   const monName=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"][+mon.slice(5,7)-1];
   const fmt=d=>d.split("-").reverse().slice(0,2).join(".");
   const w=document.createElement("div"); w.className="statwrap on";
-  w.innerHTML='<div class="sheet"><div class="sheet-head"><b>История · '+monName+' '+mon.slice(0,4)+'</b><button id="h-copy">Копировать</button> <button id="h-save">Скачать</button> <button id="h-close">Закрыть</button></div>'+
+  const MONN=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+  const mOpts=histMonths().map(m=>`<option value="${m}"${m===mon?" selected":""}>${MONN[+m.slice(5,7)-1]} ${m.slice(0,4)}</option>`).join("");
+  w.innerHTML='<div class="sheet"><div class="sheet-head"><b>История</b><select id="h-mon" style="background:#16202b;color:#e6edf5;border:1px solid #2b3846;border-radius:8px;padding:6px 8px;font-size:13px">'+mOpts+'</select><button id="h-copy">Копировать</button> <button id="h-save">Скачать</button> <button id="h-close">Закрыть</button></div>'+
     '<div class="st-search"><input id="h-q" placeholder="Поиск: код glz_ или адрес"><span id="h-clear">Сбросить</span></div>'+
     '<div class="st-hints" id="h-hints"></div><div class="st-wrap" id="h-body"></div></div>';
   document.body.appendChild(w);
   w.querySelector("#h-close").onclick=()=>w.remove();
+  w.querySelector("#h-mon").onchange=e=>{ const m=e.target.value; w.remove(); openHistory(m); };
   w.querySelector("#h-save").onclick=()=>{
     const head=["Магазин","Код","Адрес","Визиты (даты)","Инвент (даты)","IR (даты)"];
     const rr=rows.map(r=>[r.net,"glz_"+r.tt,r.addr,r.visits.map(fmt).join(", "),r.inv.map(fmt).join(", "),r.ir.map(fmt).join(", ")]);
@@ -2477,7 +2487,7 @@ function _renderRoute(){
     box.innerHTML=`<div class="chkline"><button class="rebtn time" id="btn-reorder-time">Пересобрать по времени работы</button><button class="rebtn prio" id="btn-reorder-prio">Пересобрать по важности</button><button class="rebtn near" id="btn-reorder-near">Пересобрать от меня</button></div>`+
       `<div class="chkline"><button class="small" id="btn-yroute">Яндекс: следующие 10</button><button class="small" id="btn-yroute2">Следующие 10 →</button><button class="small" id="btn-ynavi">Навигатор до следующей</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v285"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v286"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
