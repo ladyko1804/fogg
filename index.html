@@ -1466,7 +1466,16 @@ function storeRank(g){
   if(gold)return 4;
   return 5;
 }
-function reorderDay(kind){
+async function roadMatrix(coords){
+  try{
+    const q=coords.map(c=>`${c[1]},${c[0]}`).join(";");
+    const r=await fetch(`https://router.project-osrm.org/table/v1/driving/${q}?annotations=distance`,{cache:"no-store"});
+    const j=await r.json();
+    if(j.code==="Ok"&&j.distances)return j.distances;
+  }catch(e){}
+  return null;
+}
+async function reorderDay(kind){
   const arr=pts(state.active);
   if(arr.length<2)return;
   const done=arr.filter(p=>p.done);
@@ -1475,32 +1484,43 @@ function reorderDay(kind){
   const seen=new Map(); const groups=[];
   rest.forEach(p=>{ const k=String(p.tt); if(!seen.has(k)){seen.set(k,[]);groups.push(seen.get(k));} seen.get(k).push(p); });
   const last=done.length?done[done.length-1]:null;
-  let cur=last&&last.la!=null?[last.la,last.lo]:[HOME.la,HOME.lo];
-  const seq=[];
-  while(groups.length){
-    groups.sort((A,B)=>{
+  const start=(last&&last.la!=null)?[last.la,last.lo]:[HOME.la,HOME.lo];
+
+  // координаты: 0 — старт, далее группы
+  const coords=[start];
+  groups.forEach(g=>{ const c=groupCoord(g); coords.push(c||start); });
+  const m=await roadMatrix(coords);
+
+  const dist=(fromIdx,toGroupIdx)=>{
+    if(m&&m[fromIdx]&&m[fromIdx][toGroupIdx+1]!=null)return m[fromIdx][toGroupIdx+1];
+    const c=groupCoord(groups[toGroupIdx]), f=coords[fromIdx];
+    return (c&&f)?hav(f,c)*1000:1e9;
+  };
+
+  let curIdx=0;
+  const out=[];
+  const left=groups.map((g,i)=>({g,i}));
+  while(left.length){
+    left.sort((A,B)=>{
       if(kind==="time"){
-        const d=hoursCloseMin(A[0].hours)-hoursCloseMin(B[0].hours);
+        const d=hoursCloseMin(A.g[0].hours)-hoursCloseMin(B.g[0].hours);
         if(Math.abs(d)>0.5)return d;
       }else{
-        const d=storeRank(A)-storeRank(B);
+        const d=storeRank(A.g)-storeRank(B.g);
         if(d!==0)return d;
       }
-      const ca=groupCoord(A), cb=groupCoord(B);
-      const da=ca?hav(cur,ca):1e9, db=cb?hav(cur,cb):1e9;
-      return da-db;
+      return dist(curIdx,A.i)-dist(curIdx,B.i);
     });
-    const g=groups.shift(); seq.push(g);
-    const c=groupCoord(g); if(c)cur=c;
+    const pick=left.shift(); out.push(pick.g); curIdx=pick.i+1;
   }
-  const out=done.concat(...seq);
-  if(out.length!==arr.length)return;
-  state.days[state.active]=out;
+  const res=done.concat(...out);
+  if(res.length!==arr.length)return;
+  state.days[state.active]=res;
   state.keepTt=null;
   state.reorderTs=Date.now();
-  state.reorderNext=(seq[0]&&seq[0][0])?(seq[0][0].net+" "+seq[0][0].addr):"";
+  state.reorderNext=out[0]&&out[0][0]?(out[0][0].net+" "+out[0][0].addr):"";
   save(); renderRoute();
-  if(window.toastMsg)toastMsg(kind==="time"?"Пересобрал по времени работы":"Пересобрал по важности");
+  if(window.toastMsg)toastMsg((kind==="time"?"Пересобрал по времени работы":"Пересобрал по важности")+(m?" · по дорогам":" · по прямой"));
 }
 function autoReorder(){
   const arr=pts(state.active);
@@ -2447,7 +2467,7 @@ function _renderRoute(){
     box.innerHTML=`<div class="chkline"><button class="rebtn time" id="btn-reorder-time">Пересобрать по времени работы</button><button class="rebtn prio" id="btn-reorder-prio">Пересобрать по важности</button></div>`+
       `<div class="chkline"><button class="small" id="btn-yroute">Маршрут в Яндекс</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v282"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v283"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
@@ -2458,8 +2478,8 @@ function _renderRoute(){
     const bhs=box.querySelector("#btn-hist"); if(bhs)bhs.onclick=openHistory;
     const brf=box.querySelector("#btn-refresh"); if(brf)brf.onclick=hardRefresh;
     const byr=box.querySelector("#btn-yroute"); if(byr)byr.onclick=openYandexRoute;
-    const rt=box.querySelector("#btn-reorder-time"); if(rt)rt.onclick=()=>reorderDay("time");
-    const rp=box.querySelector("#btn-reorder-prio"); if(rp)rp.onclick=()=>reorderDay("prio");
+    const rt=box.querySelector("#btn-reorder-time"); if(rt)rt.onclick=()=>{reorderDay("time")};
+    const rp=box.querySelector("#btn-reorder-prio"); if(rp)rp.onclick=()=>{reorderDay("prio")};
     box.querySelector("#btn-backup").onclick=openBackup;
     box.querySelector("#btn-copy").onclick=()=>{
       const t=dayText();
