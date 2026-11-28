@@ -135,7 +135,6 @@ header{position:relative}
 .card.dim .t{font-size:14px;font-weight:600;font-style:italic}
 .card.dim .addr{font-size:12.5px;font-style:italic}
 .card.dim .meta,.card.dim .ptime,.card.dim .projline .pname{font-style:italic}
-.verline{margin-top:10px;font-size:11px;color:#5d6b7a}
 .factline{font-size:12.5px;color:#9db4cc;margin:7px 0 2px}
 .rptbtn{margin-top:8px;font-size:13px;padding:9px 12px}
 .rptbtn.sent{background:#1f4d2b;border-color:#2e7d32;color:#d6f5d6}
@@ -2501,8 +2500,8 @@ function _renderRoute(){
     box.innerHTML=`<div class="chkline"><button class="rebtn time" id="btn-reorder-time">Пересобрать по времени работы</button><button class="rebtn prio" id="btn-reorder-prio">Пересобрать по важности</button><button class="rebtn near" id="btn-reorder-near">Пересобрать от меня</button></div>`+
       `<div class="chkline"><button class="small" id="btn-yroute">Яндекс: следующие 10</button><button class="small" id="btn-yroute2">Следующие 10 →</button><button class="small" id="btn-ynavi">Навигатор до следующей</button></div>`+
       `<div class="chkline"><button class="menubig" id="btn-m-route">Маршрут</button><button class="menubig" id="btn-m-reports">Отчёты</button><button class="menubig" id="btn-m-app">Приложение</button></div>";
-      <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v290"}));
+`;
+
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
