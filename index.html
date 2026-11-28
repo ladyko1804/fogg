@@ -275,6 +275,15 @@ tr.tot td{color:#cfe3ff}
 .rebtn.prio{background:#5a2f7a;border-color:#8e4fc0;color:#f0dcff}
 .chkline .rebtn+.rebtn{margin-left:8px}
 .rebtn.near{background:#15532f;border-color:#2c8a4f;color:#d8ffe6}
+
+.menuwrap{position:fixed;inset:0;background:rgba(6,10,14,.72);display:flex;align-items:center;justify-content:center;z-index:9000;padding:18px}
+.menubox{background:#111a22;border:1px solid #2b3846;border-radius:16px;padding:14px;width:100%;max-width:360px}
+.menuhead{display:flex;justify-content:space-between;align-items:center;color:#e6edf5;font-size:15px;margin-bottom:10px}
+.menux{cursor:pointer;color:#9fb0c4;font-size:18px;padding:0 4px}
+.menubtn{display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:14px 12px;border-radius:12px;background:#1b2836;border:1px solid #33465c;color:#dbe8f6;font-size:14px;text-align:left;cursor:pointer}
+.menubtn:active{background:#24384d}
+.menubig{flex:1;padding:14px 8px;border-radius:12px;background:#1d3350;border:1px solid #3f7fd0;color:#cfe3ff;font-weight:700;font-size:13.5px;cursor:pointer}
+.chkline .menubig+.menubig{margin-left:8px}
 </style>
 <link rel="stylesheet" href="./leaflet/leaflet.css">
 <script src="./leaflet/leaflet.js">
@@ -1032,7 +1041,7 @@ function refreshStoreInfo(){
   return ch;
 }
 let state=load();
-const APP_VER="208";
+const APP_VER="289";
 if(state.appVer!==APP_VER){state.filter={};state.appVer=APP_VER;refreshStoreInfo();try{localStorage.setItem("moi-day2",JSON.stringify(state))}catch(e){}}
 (function normalize(){
   if(!state||typeof state!=="object")state={};
@@ -2080,10 +2089,14 @@ function monthHistory(mon){
     (state.days[d]||[]).forEach(p=>{
       if(/^p/i.test(String(p.tt))||/Личн/i.test(p.proj||""))return;
       const tt=String(p.tt);
-      if(!map[tt])map[tt]={net:p.net,addr:p.addr,visits:[],inv:[],ir:[]};
+      if(!map[tt])map[tt]={net:p.net,addr:p.addr,visits:[],inv:[],ir:[],tim:[],timNo:[]};
       if(p.done&&!map[tt].visits.includes(d))map[tt].visits.push(d);
       if(p.invDone&&!map[tt].inv.includes(d))map[tt].inv.push(d);
       if(p.irDone&&!map[tt].ir.includes(d))map[tt].ir.push(d);
+      if(p.kind!=="none"&&p.timMarked!==undefined||p.timDone){
+        if(p.timDone&&!map[tt].tim.includes(d))map[tt].tim.push(d);
+        if(!p.timDone&&p.timMarked&&!map[tt].timNo.includes(d))map[tt].timNo.push(d);
+      }
     });
   });
   return map;
@@ -2112,23 +2125,24 @@ function openHistory(monArg){
   w.querySelector("#h-close").onclick=()=>w.remove();
   w.querySelector("#h-mon").onchange=e=>{ const m=e.target.value; w.remove(); openHistory(m); };
   w.querySelector("#h-save").onclick=()=>{
-    const head=["Магазин","Код","Адрес","Визиты (даты)","Инвент (даты)","IR (даты)"];
-    const rr=rows.map(r=>[r.net,"glz_"+r.tt,r.addr,r.visits.map(fmt).join(", "),r.inv.map(fmt).join(", "),r.ir.map(fmt).join(", ")]);
+    const head=["Магазин","Код","Адрес","Визиты (даты)","Инвент (даты)","IR (даты)","ТИМ"];
+    const rr=rows.map(r=>[r.net,"glz_"+r.tt,r.addr,r.visits.map(fmt).join(", "),r.inv.map(fmt).join(", "),r.ir.map(fmt).join(", "),(r.tim&&r.tim.length)?"+":((r.timNo&&r.timNo.length)?"−":"")]);
     const ok=saveTextFile("История-"+mon+".csv", toCSV(head,rr));
     if(!ok)copyText(toCSV(head,rr));
   };
   w.querySelector("#h-copy").onclick=()=>{
-    const head=["Магазин","Код","Адрес","Визиты (даты)","Инвент (даты)","IR (даты)"];
-    copyText(toCSV(head, rows.map(r=>[r.net,"glz_"+r.tt,r.addr,r.visits.map(fmt).join(", "),r.inv.map(fmt).join(", "),r.ir.map(fmt).join(", ")])));
+    const head=["Магазин","Код","Адрес","Визиты (даты)","Инвент (даты)","IR (даты)","ТИМ"];
+    copyText(toCSV(head, rows.map(r=>[r.net,"glz_"+r.tt,r.addr,r.visits.map(fmt).join(", "),r.inv.map(fmt).join(", "),r.ir.map(fmt).join(", "),(r.tim&&r.tim.length)?"+":((r.timNo&&r.timNo.length)?"−":"")])));
   };
   w.onclick=e=>{ if(e.target===w)w.remove(); };
   const body=w.querySelector("#h-body"), hints=w.querySelector("#h-hints"), qi=w.querySelector("#h-q");
   const cell=(arr)=>arr.length?`<span class="h-dates">${arr.map(fmt).join(", ")}</span>`:`<span style="color:#5d6b7a">—</span>`;
   function paint(list){
     if(!list.length){ body.innerHTML='<div class="hint" style="padding:14px">Нет данных за этот месяц.</div>'; return }
-    body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>Визиты</th><th>Инвент</th><th>IR</th></tr></thead><tbody>'+
+    body.innerHTML='<table class="st"><thead><tr><th>Магазин</th><th>Визиты</th><th>Инвент</th><th>IR</th><th>ТИМ</th></tr></thead><tbody>'+
       list.map(r=>`<tr><td><b>${r.net}</b><br><span class="st-addr">${r.addr}</span><br><span class="st-code">glz_${r.tt}</span></td>`+
-        `<td>${cell(r.visits)}</td><td>${cell(r.inv)}</td><td>${cell(r.ir)}</td></tr>`).join('')+
+        `<td>${cell(r.visits)}</td><td>${cell(r.inv)}</td><td>${cell(r.ir)}</td>`+
+        `<td>${(r.tim&&r.tim.length)?'<span style="color:#8fd6a0;font-weight:700">+</span>':((r.timNo&&r.timNo.length)?'<span style="color:#ff9aa2;font-weight:700">−</span>':'<span style="color:#5d6b7a">—</span>')}</td></tr>`).join('')+
       '</tbody><tfoot><tr class="tot"><td>Итого: '+list.length+' маг.</td><td>'+list.reduce((a,r)=>a+r.visits.length,0)+'</td>'+
       '<td>'+list.reduce((a,r)=>a+r.inv.length,0)+'</td><td>'+list.reduce((a,r)=>a+r.ir.length,0)+'</td></tr></tfoot></table>';
   }
@@ -2328,7 +2342,7 @@ function _renderRoute(){
       (state.reorderNext&&(Date.now()-(state.reorderTs||0))<300000?`<br><span style="color:#8fc0ff">маршрут перестроен · следующая: ${state.reorderNext}</span>`:"")+
       (worked?` · в магазинах ${fmtDur(worked)}`:"")+
       (navigator.onLine?"":" · офлайн")+
-      ((isPastDay()||(all.length&&all.every(p=>p.done)&&all.some(p=>p.kind!=="none")))?(state.unlock?' · <span id="lock-lnk" class="lockbtn on">правки открыты · закрыть</span>':' · <span id="lock-lnk" class="lockbtn">✎ править день</span>'):"");
+      ((isPastDay()||(all.length&&all.every(p=>p.done)&&all.some(p=>p.kind!=="none")))?(state.unlock?' · <span class="lockbtn on">правки открыты</span>':''):"");
   }
   try{ enrichFromBase(state.active); pts(state.active).forEach(p=>{ if(/Магнит (КМ|ДК)/i.test(String(p.net||""))) p.tim=timFor(p.net,p.lvl); }); }catch(e){}
   try{ const m=SENT_LOG[state.active]||{}; pts(state.active).forEach(p=>{ if(m[String(p.tt).replace(/\D/g,"")]) p.sent=true; }); }catch(e){}
@@ -2485,15 +2499,16 @@ function _renderRoute(){
   {
     const box=document.createElement("div");box.className="card";
     box.innerHTML=`<div class="chkline"><button class="rebtn time" id="btn-reorder-time">Пересобрать по времени работы</button><button class="rebtn prio" id="btn-reorder-prio">Пересобрать по важности</button><button class="rebtn near" id="btn-reorder-near">Пересобрать от меня</button></div>`+
-      `<div class="chkline"><button class="small" id="btn-yroute">Яндекс: следующие 10</button><button class="small" id="btn-yroute2">Следующие 10 →</button><button class="small" id="btn-ynavi">Навигатор до следующей</button><button class="small" id="btn-backup">Копия данных</button><button class="small" id="btn-add">+ Добавить точку</button><button class="small" id="btn-copy">Скопировать итоги дня текстом</button><button class="small" id="btn-stats">Статистика визитность</button><button class="small" id="btn-hist">История за месяц</button><button class="small" id="btn-refresh">Обновить приложение</button></div>
+      `<div class="chkline"><button class="small" id="btn-yroute">Яндекс: следующие 10</button><button class="small" id="btn-yroute2">Следующие 10 →</button><button class="small" id="btn-ynavi">Навигатор до следующей</button></div>`+
+      `<div class="chkline"><button class="menubig" id="btn-m-route">Маршрут</button><button class="menubig" id="btn-m-reports">Отчёты</button><button class="menubig" id="btn-m-app">Приложение</button></div>";
       <div class="hint" id="copy-hint">Собирает отметки, полки и комментарии в текст — можно переслать мне в чат.</div>`;
-    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v286"}));
+    box.appendChild(Object.assign(document.createElement("div"),{className:"hint verline",textContent:"версия v290"}));
     if(pts(state.active).some(x=>/oral/i.test(x.proj||"")&&!x.start)){
     clearTimeout(window._oralTick);
     window._oralTick=setTimeout(()=>{ try{ if(isPastDay()===false||state.unlock) renderRoute(); }catch(e){} },5000);
   }
   wrap.appendChild(box);
-    box.querySelector("#btn-add").onclick=openAdd;
+    const bad=box.querySelector("#btn-add"); if(bad)bad.onclick=openAdd;
     const bst=box.querySelector("#btn-stats"); if(bst)bst.onclick=openStats;
     const bhs=box.querySelector("#btn-hist"); if(bhs)bhs.onclick=openHistory;
     const brf=box.querySelector("#btn-refresh"); if(brf)brf.onclick=hardRefresh;
@@ -2506,13 +2521,9 @@ function _renderRoute(){
     const rt=box.querySelector("#btn-reorder-time"); if(rt)rt.onclick=()=>{reorderDay("time")};
     const rp=box.querySelector("#btn-reorder-prio"); if(rp)rp.onclick=()=>{reorderDay("prio")};
     const rn=box.querySelector("#btn-reorder-near"); if(rn)rn.onclick=()=>{reorderDay("near")};
-    box.querySelector("#btn-backup").onclick=openBackup;
-    box.querySelector("#btn-copy").onclick=()=>{
-      const t=dayText();
-      const done=()=>{const h=document.getElementById("copy-hint");h.textContent="Скопировано. Вставь в чат со мной.";};
-      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>{prompt("Скопируй:",t)})}
-      else prompt("Скопируй:",t);
-    };
+    const bmr=box.querySelector("#btn-m-route"); if(bmr)bmr.onclick=openMenuRoute;
+    const bmrp=box.querySelector("#btn-m-reports"); if(bmrp)bmrp.onclick=openMenuReports;
+    const bma=box.querySelector("#btn-m-app"); if(bma)bma.onclick=openMenuApp;
   }
 
   const rowsOf=(i)=>groups.find(g=>g.idxs.includes(+i));
@@ -2849,6 +2860,47 @@ function openYandexNavi(){
   if(!u){ if(window.toastMsg)toastMsg("Нет следующей точки"); return }
   window.location.href=u;
   setTimeout(()=>{ try{ window.open("https://yandex.ru/maps/?rtext=~"+u.split("lat_to=")[1]," _blank") }catch(e){} },1200);
+}
+function openMenu(title, items){
+  const w=document.createElement("div"); w.className="menuwrap on";
+  w.innerHTML='<div class="menubox"><div class="menuhead"><b>'+title+'</b><span class="menux">✕</span></div>'+
+    items.map((it,i)=>'<button class="menubtn" data-mi="'+i+'">'+it.t+'</button>').join("")+'</div>';
+  document.body.appendChild(w);
+  w.querySelector(".menux").onclick=()=>w.remove();
+  w.onclick=e=>{ if(e.target===w)w.remove(); };
+  w.querySelectorAll(".menubtn").forEach(b=>b.onclick=()=>{ const it=items[+b.dataset.mi]; w.remove(); try{it.fn()}catch(e){alert(e.message)} });
+}
+function toggleEditDay(){
+  if(state.unlock){ state.unlock=false; save(); try{renderRoute()}catch(_){}; return; }
+  if(confirm("Открыть день для правок?\nМожно случайно испортить уже отправленный отчёт.")){
+    state.unlock=true; save(); try{renderRoute()}catch(_){}
+  }
+}
+function copyDayText(){
+  const t=dayText();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(()=>{ if(window.toastMsg)toastMsg("Итоги скопированы") }).catch(()=>prompt("Скопируй:",t));
+  } else prompt("Скопируй:",t);
+}
+function openMenuRoute(){
+  openMenu("Маршрут",[
+    {t:(state.unlock?"✓ Правки открыты — закрыть день":"✎ Редактировать день"), fn:toggleEditDay},
+    {t:"＋ Добавить точку", fn:openAdd}
+  ]);
+}
+function openMenuReports(){
+  openMenu("Отчёты",[
+    {t:"Скопировать итоги дня текстом", fn:copyDayText},
+    {t:"Статистика визитность", fn:()=>openStats()},
+    {t:"История работы за месяц", fn:()=>openHistory()}
+  ]);
+}
+function openMenuApp(){
+  openMenu("Приложение",[
+    {t:"Версия приложения: v"+APP_VER, fn:()=>{}},
+    {t:"Обновить приложение", fn:()=>location.reload(true)},
+    {t:"Копировать данные", fn:()=>openBackup()}
+  ]);
 }
 function checkNewVersion(){
   const cur=parseInt(String(APP_VER||"0").replace(/\D/g,""),10)||0;
